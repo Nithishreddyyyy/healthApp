@@ -140,7 +140,7 @@ const AddReminderModal: React.FC<AddReminderModalProps> = ({
 // Main Reminder Screen
 const Reminder = () => {
     const [selectedDay, setSelectedDay] = useState(3);
-    const [darkMode, setDarkMode] = useState(false);
+    const [darkMode, setDarkMode] = useState(true);
 
     const [modalVisible, setModalVisible] = useState(false);
     const [newReminder, setNewReminder] = useState('');
@@ -195,7 +195,7 @@ const Reminder = () => {
         setDate(new Date());
     };
 
-    const backgroundColor = darkMode ? '#1C1C1E' : 'white';
+    const backgroundColor = darkMode ? '#000000' : 'white';
     const textColor = darkMode ? 'white' : '#1C160C';
 
     return (

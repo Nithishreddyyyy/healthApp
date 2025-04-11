@@ -1,31 +1,44 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  Linking, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  Linking,
   Platform,
   Alert,
   Animated,
   Dimensions,
-  Image
+  ScrollView,
+  Modal,
+  TextInput,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Sun, Moon, X, MapPin } from 'phosphor-react-native';
+// For the map component - you'll need to install this
+// npm install react-native-maps
+import MapView from 'react-native-maps';
 
 const HelpScreen = () => {
-  // Animation values
+  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
   const [animation] = useState(new Animated.Value(0));
   const [breatheAnim] = useState(new Animated.Value(1));
-  
-  // Function to handle emergency call
+  const [ambulanceModalVisible, setAmbulanceModalVisible] = useState(false);
+  const [pickupLocation, setPickupLocation] = useState('');
+  const [destination, setDestination] = useState('');
+
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
   const callEmergencyContact = () => {
     const phoneNumber = '+919482837541';
-    const phoneUrl = Platform.OS === 'android' 
-      ? `tel:${phoneNumber}` 
+    const phoneUrl = Platform.OS === 'android'
+      ? `tel:${phoneNumber}`
       : `telprompt:${phoneNumber}`;
-    
+
     Linking.canOpenURL(phoneUrl)
       .then(supported => {
         if (supported) {
@@ -34,18 +47,26 @@ const HelpScreen = () => {
           Alert.alert('Phone not available', 'Cannot make a phone call at this time');
         }
       })
-      .catch(error => Alert.alert('Error', 'Failed to make call'));
+      .catch(() => Alert.alert('Error', 'Failed to make call'));
   };
 
-  // Function to play calming music
   const playMusic = () => {
-    // In a real app, you would implement music playback here
     Alert.alert('Playing Music', 'Calming music would start playing now');
-    // Example: If you have a music library integration
-    // musicPlayerService.play('calming_playlist');
   };
 
-  // Pulse animation for SOS button
+  const bookAmbulance = () => {
+    if (!pickupLocation || !destination) {
+      Alert.alert('Missing Information', 'Please enter both pickup location and destination');
+      return;
+    }
+    
+    Alert.alert(
+      'Ambulance Booked',
+      `An ambulance is on the way to ${pickupLocation}. ETA: 10 minutes`,
+      [{ text: 'OK', onPress: () => setAmbulanceModalVisible(false) }]
+    );
+  };
+
   useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -61,8 +82,7 @@ const HelpScreen = () => {
         }),
       ])
     ).start();
-    
-    // Subtle fade-in animation for the entire screen
+
     Animated.timing(animation, {
       toValue: 1,
       duration: 800,
@@ -72,87 +92,183 @@ const HelpScreen = () => {
 
   return (
     <LinearGradient
-      colors={['#f8f9fa', '#e9ecef']}
+      colors={darkMode ? ['#000000', '#2c2c2e'] : ['#f8f9fa', '#e9ecef']}
       style={styles.gradientBackground}
     >
-      <Animated.View style={[styles.container, { opacity: animation }]}>
-        <SafeAreaView style={styles.safeArea}>
-          <View style={styles.header}>
-            <View style={styles.headerTextContainer}>
-              <Text style={styles.welcomeText}>Don't Worry</Text>
-              <Text style={styles.headerText}>Mark, Your Family is here.</Text>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <Animated.View style={[styles.container, { opacity: animation }]}>
+          <SafeAreaView style={styles.safeArea}>
+            <View style={styles.header}>
+              <View style={styles.headerTextContainer}>
+                <Text style={[styles.welcomeText, { color: darkMode ? '#aaa' : '#555' }]}>
+                  Don't Worry
+                </Text>
+                <Text style={[styles.headerText, { color: darkMode ? '#fff' : '#222' }]}>
+                  User, Your Family is here.
+                </Text>
+              </View>
+
+              <TouchableOpacity onPress={toggleDarkMode} style={styles.iconButton}>
+                {darkMode ? (
+                  <Sun size={28} color="#fff" weight="bold" />
+                ) : (
+                  <Moon size={28} color="#222" weight="bold" />
+                )}
+              </TouchableOpacity>
             </View>
-            
-            <View style={styles.profileContainer}>
-              <View style={styles.profileCircle}>
-                {/* Replace with actual profile image if available */}
-                <Text style={styles.profileInitial}>M</Text>
+
+            <View style={styles.sosButtonContainer}>
+              <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
+                <TouchableOpacity
+                  style={styles.sosButton}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    Alert.alert(
+                      'SOS Activated',
+                      'Emergency services have been notified',
+                      [{ text: 'OK', style: 'default' }]
+                    );
+                  }}
+                >
+                  <View style={styles.sosInnerCircle}>
+                    <Text style={styles.sosButtonText}>Help</Text>
+                    <Text style={styles.sosButtonSubText}>CLICK IN CASES OF AN EMERGENCY</Text>
+                  </View>
+                </TouchableOpacity>
+              </Animated.View>
+            </View>
+
+            <View style={styles.optionsContainer}>
+              {/* Ambulance Option Card */}
+              <View style={[styles.optionCard, { backgroundColor: darkMode ? '#333' : 'white' }]}>
+                <View style={styles.ambulanceImageContainer}>
+                  {/* Using a static color instead of an image to avoid path issues */}
+                  <View style={styles.ambulanceImagePlaceholder}>
+                    <Text style={styles.ambulanceImageText}>🚑</Text>
+                  </View>
+                </View>
+                <Text style={[styles.optionText, { color: darkMode ? '#eee' : '#444' }]}>
+                  Need Medical Transportation?
+                </Text>
+                <TouchableOpacity 
+                  style={styles.actionButton} 
+                  onPress={() => setAmbulanceModalVisible(true)}
+                >
+                  <LinearGradient
+                    colors={['#D32F2F', '#B71C1C']}
+                    style={styles.buttonGradient}
+                  >
+                    <Text style={styles.actionButtonText}>Book Ambulance</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.optionCard, { backgroundColor: darkMode ? '#333' : 'white' }]}>
+                <Text style={[styles.optionText, { color: darkMode ? '#eee' : '#444' }]}>
+                  Feeling Lost? Call Your Close ones
+                </Text>
+                <TouchableOpacity style={styles.actionButton} onPress={callEmergencyContact}>
+                  <LinearGradient
+                    colors={['black', '#182848']}
+                    style={styles.buttonGradient}
+                  >
+                    <Text style={styles.actionButtonText}>Call Emergency Contacts</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
+              </View>
+
+              <View style={[styles.optionCard, { backgroundColor: darkMode ? '#333' : 'white' }]}>
+                <Text style={[styles.optionText, { color: darkMode ? '#eee' : '#444' }]}>
+                  Panicking? Listen to some calming music
+                </Text>
+                <TouchableOpacity style={styles.actionButton} onPress={playMusic}>
+                  <LinearGradient
+                    colors={['black', '#182848']}
+                    style={styles.buttonGradient}
+                  >
+                    <Text style={styles.actionButtonText}>Play Music</Text>
+                  </LinearGradient>
+                </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </SafeAreaView>
+        </Animated.View>
+      </ScrollView>
 
-          <View style={styles.sosButtonContainer}>
-            <Animated.View style={{ transform: [{ scale: breatheAnim }] }}>
-              <TouchableOpacity 
-                style={styles.sosButton}
-                activeOpacity={0.7}
-                onPress={() => {
-                  Alert.alert(
-                    'SOS Activated', 
-                    'Emergency services have been notified',
-                    [{ text: 'OK', style: 'default' }]
-                  );
-                }}
-              >
-                <View style={styles.sosInnerCircle}>
-                  <Text style={styles.sosButtonText}>Help</Text>
-                  <Text style={styles.sosButtonSubText}>CLICK IN CASES OF AN EMERGENCY</Text>
-                </View>
-              </TouchableOpacity>
-            </Animated.View>
+      {/* Ambulance Booking Modal */}
+      <Modal
+        animationType="slide"
+        transparent={false}
+        visible={ambulanceModalVisible}
+        onRequestClose={() => setAmbulanceModalVisible(false)}
+      >
+        <SafeAreaView style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Book Ambulance</Text>
+            <TouchableOpacity 
+              style={styles.closeButton}
+              onPress={() => setAmbulanceModalVisible(false)}
+            >
+              <X size={24} color="#333" weight="bold" />
+            </TouchableOpacity>
           </View>
-
-          <View style={styles.optionsContainer}>
-            <View style={styles.optionCard}>
-              <Text style={styles.optionText}>Feeling Lost? Call Your Close ones</Text>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={callEmergencyContact}
-              >
-                <LinearGradient
-                  colors={['black', '#182848']}
-                  style={styles.buttonGradient}
-                >
-                  <Text style={styles.actionButtonText}>Call Emergency Contacts</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+          
+          <View style={styles.mapContainer}>
+            <MapView
+              style={styles.map}
+              initialRegion={{
+                latitude: 37.78825,
+                longitude: -122.4324,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              }}
+            />
+          </View>
+          
+          <View style={styles.inputContainer}>
+            <View style={styles.inputWrapper}>
+              <MapPin size={20} color="#D32F2F" />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter pickup location"
+                placeholderTextColor="#888"
+                value={pickupLocation}
+                onChangeText={setPickupLocation}
+              />
             </View>
-
-            <View style={styles.optionCard}>
-              <Text style={styles.optionText}>Panicking? Listen to some calming music</Text>
-              <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={playMusic}
-              >
-                <LinearGradient
-                  colors={['black', '#182848']}
-                  style={styles.buttonGradient}
-                >
-                  <Text style={styles.actionButtonText}>Play Music</Text>
-                </LinearGradient>
-              </TouchableOpacity>
+            <View style={styles.inputWrapper}>
+              <MapPin size={20} color="#333" />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter destination"
+                placeholderTextColor="#888"
+                value={destination}
+                onChangeText={setDestination}
+              />
             </View>
           </View>
+          
+          <TouchableOpacity style={styles.bookNowButton} onPress={bookAmbulance}>
+            <LinearGradient
+              colors={['#D32F2F', '#B71C1C']}
+              style={styles.bookNowGradient}
+            >
+              <Text style={styles.bookNowText}>BOOK NOW</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </SafeAreaView>
-      </Animated.View>
+      </Modal>
     </LinearGradient>
   );
 };
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   gradientBackground: {
+    flex: 1,
+  },
+  scrollView: {
     flex: 1,
   },
   safeArea: {
@@ -174,34 +290,15 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     fontSize: 16,
-    color: '#555',
     marginBottom: 4,
   },
   headerText: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#222',
   },
-  profileContainer: {
-    marginLeft: 15,
-  },
-  profileCircle: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#4a6fa5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  profileInitial: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: 'white',
+  iconButton: {
+    padding: 8,
+    borderRadius: 100,
   },
   sosButtonContainer: {
     alignItems: 'center',
@@ -247,9 +344,9 @@ const styles = StyleSheet.create({
   },
   optionsContainer: {
     marginTop: 10,
+    marginBottom: 20,
   },
   optionCard: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
@@ -262,7 +359,6 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 18,
     fontWeight: '500',
-    color: '#444',
     marginBottom: 16,
   },
   actionButton: {
@@ -279,6 +375,89 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 0.5,
+  },
+  ambulanceImageContainer: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  // Using a placeholder instead of an image
+  ambulanceImagePlaceholder: {
+    width: '100%',
+    height: 120,
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  ambulanceImageText: {
+    fontSize: 60,
+  },
+  
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+    backgroundColor: 'white',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  mapContainer: {
+    width: '100%',
+    height: height * 0.4,
+  },
+  map: {
+    width: '100%',
+    height: '100%',
+  },
+  inputContainer: {
+    padding: 15,
+    backgroundColor: 'white',
+    marginTop: 1,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    borderRadius: 8,
+    marginBottom: 15,
+    paddingHorizontal: 10,
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    height: 50,
+    paddingLeft: 10,
+    color: '#333',
+  },
+  bookNowButton: {
+    margin: 15,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  bookNowGradient: {
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  bookNowText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 1,
   },
 });
 
