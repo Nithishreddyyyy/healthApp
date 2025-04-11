@@ -40,7 +40,7 @@ const Exercise = () => {
     {
       id: 3,
       title: 'Finger Move',
-      description: 'Exercise activity for finger movement',
+      description: 'Finger movement exercise',
       imageUrl:
         'https://cdn.usegalileo.ai/sdxl10/3ca94118-9dea-450d-a234-e117fcd61354.png',
       hasOptions: true,
@@ -62,11 +62,9 @@ const Exercise = () => {
       <StatusBar barStyle={darkMode ? 'light-content' : 'dark-content'} />
       <View style={styles.mainContainer}>
         <View>
-          {/* Header */}
+          {/* Header - Removed left menu icon */}
           <View style={[styles.header, { backgroundColor: colors.background }]}>
-            <TouchableOpacity style={styles.iconButton}>
-              <Feather name="menu" size={24} color={colors.iconColor} />
-            </TouchableOpacity>
+            <View style={styles.headerSpacer} />
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
               Exercise
             </Text>
@@ -75,7 +73,7 @@ const Exercise = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Exercise List */}
+          {/* Exercise List - Made workout tiles bigger */}
           <ScrollView>
             {exerciseItems.map((item) => (
               <TouchableOpacity
@@ -140,10 +138,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   headerTitle: {
-    fontSize: 18,
+    fontSize: 28,
     fontWeight: 'bold',
     flex: 1,
     textAlign: 'center',
+  },
+  headerSpacer: {
+    width: 48,
   },
   iconButton: {
     width: 48,
@@ -154,48 +155,53 @@ const styles = StyleSheet.create({
   exerciseItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    minHeight: 72,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    minHeight: 100, // Increased from 72 to make tiles bigger
     justifyContent: 'space-between',
+    marginVertical: 8, // Added to create spacing between items
+    marginHorizontal: 12, // Added horizontal margin
+    borderRadius: 12, // Added for better aesthetics with larger tiles
   },
   exerciseItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 20, // Increased from 16
   },
   exerciseImage: {
-    width: 56,
-    height: 56,
-    borderRadius: 8,
+    width: 72, // Increased from 56
+    height: 72, // Increased from 56
+    borderRadius: 12, // Increased from 8
   },
   exerciseTextContainer: {
     justifyContent: 'center',
   },
   exerciseTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: 18, // Increased from 16
+    fontWeight: '600', // Increased from 500
+    marginBottom: 4, // Added for spacing
   },
   exerciseDescription: {
-    fontSize: 14,
+    fontSize: 15, // Increased from 14
   },
   exerciseItemRight: {
     flexShrink: 0,
+    padding: 8, // Added padding
   },
   statusIndicatorContainer: {
-    width: 28,
-    height: 28,
+    width: 36, // Increased from 28
+    height: 36, // Increased from 28
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeStatusIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 16, // Increased from 12
+    height: 16, // Increased from 12
+    borderRadius: 8, // Increased from 6
   },
   optionButton: {
-    width: 28,
-    height: 28,
+    width: 36, // Increased from 28
+    height: 36, // Increased from 28
     alignItems: 'center',
     justifyContent: 'center',
   },
