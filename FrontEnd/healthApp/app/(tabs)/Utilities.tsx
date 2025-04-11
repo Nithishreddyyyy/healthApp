@@ -85,14 +85,28 @@ const Utilities = () => {
   const [isDarkMode, setIsDarkMode] = useState(true); // Set dark mode as default
   const systemColorScheme = useColorScheme();
 
-  // Set the appropriate colors based on the theme
+  // Vibrant color palette for dark/light modes
   const theme = {
-    backgroundColor: isDarkMode ? '#121212' : 'white',
-    textColor: isDarkMode ? 'white' : 'black',
-    cardBgColor: isDarkMode ? '#1E1E1E' : '#F3F4F6',
-    inputBgColor: isDarkMode ? '#2C2C2C' : 'white',
-    borderColor: isDarkMode ? '#333333' : '#E5E7EB',
-    secondaryTextColor: isDarkMode ? '#AAAAAA' : '#6B7280',
+    // Backgrounds
+    background: isDarkMode ? '#0E0E0E' : '#F7F7F7',
+    card: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+    input: isDarkMode ? '#2D2D2D' : '#FFFFFF',
+    
+    // Text
+    text: isDarkMode ? '#F4F4F4' : '#1A1A1A',
+    secondaryText: isDarkMode ? '#A0A0A0' : '#666666',
+    
+    // Borders
+    border: isDarkMode ? '#333333' : '#EDEDED',
+    
+    // Accent colors (gradient components)
+    accentPrimary: '#5B00FF',
+    accentSecondary: '#FF4F8B',
+    accentTertiary: '#1A00FF',
+    accentOrange: '#FF6A3D',
+    
+    // Special elements
+    toggleBg: isDarkMode ? '#2A1E3A' : '#F0E8FF',
   };
 
   // Toggle dark mode
@@ -140,7 +154,7 @@ const Utilities = () => {
         height: 20, 
         borderRadius: 10, 
         borderWidth: 2,
-        borderColor: theme.textColor,
+        borderColor: theme.accentPrimary,
         backgroundColor: 'transparent',
         overflow: 'hidden',
         position: 'relative'
@@ -150,7 +164,7 @@ const Utilities = () => {
           width: 15,
           height: 15,
           borderRadius: 7.5,
-          backgroundColor: theme.textColor,
+          backgroundColor: theme.accentPrimary,
           right: -5,
           top: -5
         }} />
@@ -165,7 +179,7 @@ const Utilities = () => {
         width: 12, 
         height: 12, 
         borderRadius: 6, 
-        backgroundColor: theme.textColor 
+        backgroundColor: theme.accentOrange 
       }} />
       {[0, 45, 90, 135, 180, 225, 270, 315].map((degree, index) => (
         <View 
@@ -174,7 +188,7 @@ const Utilities = () => {
             position: 'absolute',
             height: 8,
             width: 2,
-            backgroundColor: theme.textColor,
+            backgroundColor: theme.accentOrange,
             transform: [
               { rotate: `${degree}deg` },
               { translateY: -10 }
@@ -186,7 +200,7 @@ const Utilities = () => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.backgroundColor }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
       <ScrollView style={{ paddingHorizontal: 20 }}>
         <View style={{ maxWidth: 500, marginHorizontal: 'auto', paddingTop: 20 }}>
           {/* Dark Mode Toggle Button - positioned at the top right */}
@@ -200,13 +214,16 @@ const Utilities = () => {
               style={{ 
                 padding: 10,
                 borderRadius: 20,
-                backgroundColor: isDarkMode ? '#333333' : '#F3F4F6',
+                backgroundColor: theme.toggleBg,
                 alignItems: 'center',
                 justifyContent: 'center',
                 width: 44,
-                height: 44
+                height: 44,
+                borderWidth: 1,
+                borderColor: isDarkMode ? theme.accentPrimary : theme.accentOrange
               }}
               onPress={toggleDarkMode}
+              activeOpacity={0.8}
             >
               {isDarkMode ? <MoonIcon /> : <SunIcon />}
             </TouchableOpacity>
@@ -214,7 +231,16 @@ const Utilities = () => {
           
           {/* Header */}
           <View style={{ marginBottom: 24 }}>
-            <Text style={{ textAlign: 'center', fontSize: 24, fontWeight: 'bold', color: theme.textColor }}>
+            <Text style={{ 
+              textAlign: 'center', 
+              fontSize: 24, 
+              fontWeight: 'bold', 
+              color: theme.text,
+              textShadowColor: isDarkMode ? theme.accentPrimary : theme.accentOrange,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: isDarkMode ? 10 : 5,
+              opacity: isDarkMode ? 0.9 : 1
+            }}>
               Surgery Exercise Recommendations
             </Text>
           </View>
@@ -227,14 +253,19 @@ const Utilities = () => {
                 paddingHorizontal: 16, 
                 paddingVertical: 12, 
                 borderWidth: 1, 
-                borderColor: theme.borderColor, 
+                borderColor: theme.border, 
                 borderRadius: 9999, 
                 fontSize: 16,
-                backgroundColor: theme.inputBgColor,
-                color: theme.textColor
+                backgroundColor: theme.input,
+                color: theme.text,
+                shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+                shadowOpacity: 0.1,
+                shadowOffset: { width: 0, height: 2 },
+                shadowRadius: 4,
+                elevation: 2
               }}
               placeholder="Search by surgery type"
-              placeholderTextColor={theme.secondaryTextColor}
+              placeholderTextColor={theme.secondaryText}
               value={searchValue}
               onChangeText={(text) => {
                 setSearchValue(text);
@@ -246,31 +277,65 @@ const Utilities = () => {
               <TouchableOpacity 
                 style={{ position: 'absolute', right: 16, top: 12 }}
                 onPress={clearSearch}
+                activeOpacity={0.7}
               >
-                <Text style={{ color: theme.secondaryTextColor, fontSize: 18 }}>✕</Text>
+                <Text style={{ color: theme.accentSecondary, fontSize: 18 }}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
           
           {/* Quick Access Section */}
-          <View style={{ backgroundColor: theme.cardBgColor, borderRadius: 12, padding: 16, marginBottom: 24 }}>
-            <Text style={{ textAlign: 'center', fontWeight: '500', marginBottom: 16, color: theme.textColor }}>QUICK ACCESS</Text>
+          <View style={{ 
+            backgroundColor: theme.card, 
+            borderRadius: 12, 
+            padding: 16, 
+            marginBottom: 24,
+            borderWidth: 1,
+            borderColor: theme.border,
+            shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+            shadowOpacity: 0.1,
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 8
+          }}>
+            <Text style={{ 
+              textAlign: 'center', 
+              fontWeight: '500', 
+              marginBottom: 16, 
+              color: theme.text,
+              fontSize: 16
+            }}>
+              QUICK ACCESS
+            </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {quickAccessOptions.map((option, index) => (
                 <TouchableOpacity
                   key={index}
                   style={{ 
-                    backgroundColor: theme.inputBgColor, 
+                    backgroundColor: theme.input, 
                     borderRadius: 8, 
                     width: '30%', 
                     height: 80, 
                     alignItems: 'center', 
                     justifyContent: 'center', 
-                    marginBottom: 16 
+                    marginBottom: 16,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+                    shadowOpacity: 0.05,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4
                   }}
                   onPress={() => handleQuickAccessPress(option)}
+                  activeOpacity={0.7}
                 >
-                  <Text style={{ textAlign: 'center', fontSize: 14, color: theme.textColor }}>{option}</Text>
+                  <Text style={{ 
+                    textAlign: 'center', 
+                    fontSize: 14, 
+                    color: theme.text,
+                    fontWeight: '500'
+                  }}>
+                    {option}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -282,34 +347,67 @@ const Utilities = () => {
               recommendations.map((exercise) => (
                 <View key={exercise.id} style={{ 
                   flexDirection: 'row', 
-                  backgroundColor: theme.cardBgColor, 
+                  backgroundColor: theme.card, 
                   borderRadius: 12, 
                   padding: 16, 
-                  marginBottom: 16 
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+                  shadowOpacity: 0.1,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowRadius: 4
                 }}>
                   <View style={{ 
                     width: 96, 
                     height: 96, 
-                    backgroundColor: theme.inputBgColor, 
+                    backgroundColor: theme.input, 
                     borderRadius: 8, 
                     alignItems: 'center', 
-                    justifyContent: 'center' 
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: theme.border
                   }}>
                     <Image
                       source={{ uri: exercise.imageUrl }}
-                      style={{ width: 80, height: 80 }}
+                      style={{ width: 80, height: 80, borderRadius: 4 }}
                       resizeMode="contain"
                     />
                   </View>
                   <View style={{ marginLeft: 16, flex: 1 }}>
-                    <Text style={{ fontWeight: '500', marginBottom: 4, color: theme.textColor }}>{exercise.name}</Text>
-                    <Text style={{ fontSize: 14, color: theme.secondaryTextColor }}>{exercise.description}</Text>
+                    <Text style={{ 
+                      fontWeight: '600', 
+                      marginBottom: 4, 
+                      color: theme.text,
+                      fontSize: 16
+                    }}>
+                      {exercise.name}
+                    </Text>
+                    <Text style={{ 
+                      fontSize: 14, 
+                      color: theme.secondaryText,
+                      lineHeight: 20
+                    }}>
+                      {exercise.description}
+                    </Text>
                   </View>
                 </View>
               ))
             ) : searchValue ? (
-              <View style={{ paddingVertical: 32, alignItems: 'center' }}>
-                <Text style={{ color: theme.secondaryTextColor }}>No exercises found for "{searchValue}"</Text>
+              <View style={{ 
+                paddingVertical: 32, 
+                alignItems: 'center',
+                backgroundColor: theme.card,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: theme.border
+              }}>
+                <Text style={{ 
+                  color: theme.secondaryText,
+                  fontSize: 16
+                }}>
+                  No exercises found for "{searchValue}"
+                </Text>
               </View>
             ) : null}
           </View>
