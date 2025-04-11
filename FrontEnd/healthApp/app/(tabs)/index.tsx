@@ -465,7 +465,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         flex: 1,
-        textAlign: 'center',
+        textAlign: 'left',
     },
     quoteSection: {
         padding: 20,
