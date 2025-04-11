@@ -48,13 +48,19 @@ const Exercise = () => {
     },
   ];
 
+  // Updated color palette with vibrant accents
   const colors = {
-    background: darkMode ? '#000000' : '#FFFFFF',
-    textPrimary: darkMode ? '#FFFFFF' : '#1C160C',
-    textSecondary: darkMode ? '#A18249' : '#A18249',
-    cardBackground: darkMode ? '#2A2116' : '#FFFFFF',
-    iconColor: darkMode ? '#FFFFFF' : '#1C160C',
-    activeStatus: '#019863',
+    background: darkMode ? '#0E0E0E' : '#F7F7F7',
+    textPrimary: darkMode ? '#F4F4F4' : '#1A1A1A',
+    textSecondary: darkMode ? '#A0A0A0' : '#666666',
+    cardBackground: darkMode ? '#1A1A1A' : '#FFFFFF',
+    iconColor: darkMode ? '#F4F4F4' : '#1A1A1A',
+    activeStatus: '#5B00FF', // Changed to vibrant purple
+    accentPrimary: '#5B00FF',
+    accentSecondary: '#FF4F8B',
+    accentTertiary: '#1A00FF',
+    accentOrange: '#FF6A3D',
+    borderColor: darkMode ? '#333333' : '#EDEDED',
   };
 
   return (
@@ -62,28 +68,62 @@ const Exercise = () => {
       <StatusBar barStyle={darkMode ? 'light-content' : 'dark-content'} />
       <View style={styles.mainContainer}>
         <View>
-          {/* Header - Removed left menu icon */}
-          <View style={[styles.header, { backgroundColor: colors.background }]}>
+          {/* Header with gradient border */}
+          <View style={[
+            styles.header, 
+            { 
+              backgroundColor: colors.background,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.borderColor
+            }
+          ]}>
             <View style={styles.headerSpacer} />
             <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
               Exercise
             </Text>
-            <TouchableOpacity style={styles.iconButton} onPress={toggleDarkMode}>
-              <Feather name="moon" size={24} color={colors.iconColor} />
+            <TouchableOpacity 
+              style={styles.iconButton} 
+              onPress={toggleDarkMode}
+              activeOpacity={0.8}
+            >
+              {darkMode ? (
+                <Feather name="sun" size={24} color={colors.accentSecondary} />
+              ) : (
+                <Feather name="moon" size={24} color={colors.accentPrimary} />
+              )}
             </TouchableOpacity>
           </View>
 
-          {/* Exercise List - Made workout tiles bigger */}
-          <ScrollView>
+          {/* Exercise List with enhanced styling */}
+          <ScrollView style={styles.scrollView}>
             {exerciseItems.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                style={[styles.exerciseItem, { backgroundColor: colors.cardBackground }]}
+                style={[
+                  styles.exerciseItem, 
+                  { 
+                    backgroundColor: colors.cardBackground,
+                    borderColor: colors.borderColor,
+                    borderWidth: 1,
+                    shadowColor: darkMode ? colors.accentPrimary : '#000',
+                    shadowOpacity: 0.1,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4,
+                    elevation: 2,
+                  }
+                ]}
+                activeOpacity={0.8}
               >
                 <View style={styles.exerciseItemLeft}>
                   <Image
                     source={{ uri: item.imageUrl }}
-                    style={styles.exerciseImage}
+                    style={[
+                      styles.exerciseImage,
+                      {
+                        borderColor: item.active ? colors.accentPrimary : colors.borderColor,
+                        borderWidth: item.active ? 2 : 0
+                      }
+                    ]}
                   />
                   <View style={styles.exerciseTextContainer}>
                     <Text style={[styles.exerciseTitle, { color: colors.textPrimary }]}>
@@ -99,17 +139,42 @@ const Exercise = () => {
                 </View>
                 <View style={styles.exerciseItemRight}>
                   {item.active ? (
-                    <View style={styles.statusIndicatorContainer}>
+                    <View style={[
+                      styles.statusIndicatorContainer,
+                      {
+                        backgroundColor: darkMode ? '#2A1E3A' : '#F0E8FF',
+                        borderRadius: 20
+                      }
+                    ]}>
                       <View
                         style={[
                           styles.activeStatusIndicator,
-                          { backgroundColor: colors.activeStatus },
+                          { 
+                            backgroundColor: colors.accentPrimary,
+                            shadowColor: colors.accentPrimary,
+                            shadowOpacity: 0.5,
+                            shadowRadius: 4,
+                            shadowOffset: { width: 0, height: 2 }
+                          }
                         ]}
                       />
                     </View>
                   ) : (
-                    <TouchableOpacity style={styles.optionButton}>
-                      <Feather name="sliders" size={24} color={colors.iconColor} />
+                    <TouchableOpacity 
+                      style={[
+                        styles.optionButton,
+                        {
+                          backgroundColor: darkMode ? '#2A1E3A' : '#F0E8FF',
+                          borderRadius: 20
+                        }
+                      ]}
+                      activeOpacity={0.7}
+                    >
+                      <Feather 
+                        name="sliders" 
+                        size={20} 
+                        color={item.active ? '#FFFFFF' : colors.accentPrimary} 
+                      />
                     </TouchableOpacity>
                   )}
                 </View>
@@ -130,11 +195,14 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
   },
+  scrollView: {
+    paddingTop: 8,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    paddingBottom: 8,
+    paddingBottom: 12,
     justifyContent: 'space-between',
   },
   headerTitle: {
@@ -151,57 +219,61 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 24,
   },
   exerciseItem: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    minHeight: 100, // Increased from 72 to make tiles bigger
+    minHeight: 100,
     justifyContent: 'space-between',
-    marginVertical: 8, // Added to create spacing between items
-    marginHorizontal: 12, // Added horizontal margin
-    borderRadius: 12, // Added for better aesthetics with larger tiles
+    marginVertical: 8,
+    marginHorizontal: 16,
+    borderRadius: 16,
   },
   exerciseItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 20, // Increased from 16
+    gap: 20,
+    flex: 1,
   },
   exerciseImage: {
-    width: 72, // Increased from 56
-    height: 72, // Increased from 56
-    borderRadius: 12, // Increased from 8
+    width: 72,
+    height: 72,
+    borderRadius: 16,
   },
   exerciseTextContainer: {
     justifyContent: 'center',
+    flex: 1,
   },
   exerciseTitle: {
-    fontSize: 18, // Increased from 16
-    fontWeight: '600', // Increased from 500
-    marginBottom: 4, // Added for spacing
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   exerciseDescription: {
-    fontSize: 15, // Increased from 14
+    fontSize: 15,
+    lineHeight: 20,
   },
   exerciseItemRight: {
     flexShrink: 0,
-    padding: 8, // Added padding
+    padding: 8,
   },
   statusIndicatorContainer: {
-    width: 36, // Increased from 28
-    height: 36, // Increased from 28
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
   activeStatusIndicator: {
-    width: 16, // Increased from 12
-    height: 16, // Increased from 12
-    borderRadius: 8, // Increased from 6
+    width: 16,
+    height: 16,
+    borderRadius: 8,
   },
   optionButton: {
-    width: 36, // Increased from 28
-    height: 36, // Increased from 28
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
   },
