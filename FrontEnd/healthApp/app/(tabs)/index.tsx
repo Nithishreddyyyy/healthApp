@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -28,15 +28,15 @@ import {
     Trophy
 } from 'phosphor-react-native';
 import * as Localization from 'expo-localization';
-import { I18n } from 'i18n-js'; // Updated import for newer i18n-js versions
+import { I18n } from 'i18n-js';
 
 // Create a new i18n instance
 const i18n = new I18n({
     en: {
         welcome: 'Welcome!',
         quote: 'Quote of the Day',
-        quoteContent: 'The only way to do great work is to love what you do.',
-        quoteAuthor: '- Steve Jobs',
+        quoteContent: '',
+        quoteAuthor: '',
         reminders: 'Reminders',
         reminder: 'Reminder',
         details: 'Details about reminder',
@@ -117,9 +117,30 @@ const i18n = new I18n({
 
 // Configure i18n
 i18n.locale = Localization.locale;
-i18n.enableFallback = true; // Updated property name
+i18n.enableFallback = true;
 
 const App = () => {
+    const [quote, setQuote] = useState({content: '', author: ''});
+    
+    useEffect(() => {
+        const fetchQuote = async () => {
+            try {
+                const response = await fetch('http://192.168.7.149:5000/get_quote');
+                const data = await response.json();
+                console.log('Quote response:', data); // Debug log
+                setQuote({content: data.quote || data.content || data.message, author: data.author || ''});
+            } catch (error) {
+                console.error('Error fetching quote:', error);
+                // Fallback to default quote if API fails
+                setQuote({
+                    content: 'The only way to do great work is to love what you do.',
+                    author: '- Steve Jobs'
+                });
+            }
+        };
+        
+        fetchQuote();
+    }, []);
     const [isDarkMode, setIsDarkMode] = useState(true);
     const [chatVisible, setChatVisible] = useState(false);
     const [message, setMessage] = useState('');
@@ -150,15 +171,33 @@ const App = () => {
         setLang(newLang);
     };
 
+    // Updated theme with vibrant gradient colors
     const theme = {
-        background: isDarkMode ? '#000000' : '#FFFFFF',
-        text: isDarkMode ? '#FFFFFF' : '#000000',
-        secondaryText: isDarkMode ? '#D3D3D3' : '#A18249',
-        card: isDarkMode ? '#2A2216' : '#F4EFE6',
-        progressTrack: isDarkMode ? '#3A2F23' : '#E9DFCE',
-        accent: '#019863',
-        quoteBg: isDarkMode ? '#3A2F23' : '#E9DFCE',
+        // Backgrounds
+        background: isDarkMode ? '#0E0E0E' : '#F7F7F7',
+        card: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+        modal: isDarkMode ? '#222222' : '#FFFFFF',
+        progressTrack: isDarkMode ? '#2D2D2D' : '#EDEDED',
+        
+        // Text
+        text: isDarkMode ? '#F4F4F4' : '#1A1A1A',
+        secondaryText: isDarkMode ? '#A0A0A0' : '#666666',
+        
+        // Accent colors (gradient components)
+        accentPrimary: '#5B00FF',
+        accentSecondary: '#FF4F8B',
+        accentTertiary: '#1A00FF',
+        accentOrange: '#FF6A3D',
+        
+        // Special elements
+        quoteBg: isDarkMode ? '#2A1E3A' : '#F0E8FF',
+        streakBg: isDarkMode ? '#1E2A3A' : '#E8F0FF',
+        chatbotBg: isDarkMode ? '#5B00FF' : '#5B00FF', // Keep vibrant even in light mode
     };
+
+    const getGradientStyle = (colors: string[]) => ({
+        background: `linear-gradient(45deg, ${colors.join(', ')})`,
+    });
 
     const incrementStreak = () => {
         setStreak(streak + 1);
@@ -181,31 +220,51 @@ const App = () => {
         setEditModalVisible(false);
     };
 
-    const sendMessage = () => {
+    const sendMessage = async () => {
         if (message.trim() === '') return;
         
-        // Add user message
         const userMessage = { id: chatMessages.length + 1, text: message, isUser: true };
         setChatMessages([...chatMessages, userMessage]);
+        setMessage('');
         
-        // Simple auto-response
-        setTimeout(() => {
+        try {
+            const response = await fetch('http://192.168.7.149:5000/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: message
+                })
+            });
+            
+            const data = await response.json();
+            
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            
             const botResponse = { 
                 id: chatMessages.length + 2, 
-                text: "I'm just a demo chatbot. I cannot respond to specific queries.", 
+                text: data.response || "I couldn't get a response from the server.", 
                 isUser: false 
             };
             setChatMessages(prev => [...prev, botResponse]);
-        }, 500);
-        
-        setMessage('');
+        } catch (error) {
+            const botResponse = { 
+                id: chatMessages.length + 2, 
+                text: "Error: " + error.message, 
+                isUser: false 
+            };
+            setChatMessages(prev => [...prev, botResponse]);
+        }
     };
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]}>
             <StatusBar backgroundColor={theme.background} barStyle={isDarkMode ? "light-content" : "dark-content"} />
             <ScrollView style={styles.scrollView}>
-                {/* Header - Menu icon removed */}
+                {/* Header */}
                 <View style={styles.header}>
                     <Text style={[styles.headerTitle, { color: theme.text }]}>{i18n.t('welcome')}</Text>
                     <View style={styles.iconRow}>
@@ -222,30 +281,66 @@ const App = () => {
                     </View>
                 </View>
 
-                {/* Enhanced Quote Section */}
-                <View style={[styles.quoteSection, { backgroundColor: theme.quoteBg, borderRadius: 12, margin: 16 }]}>
+                {/* Quote Section with gradient border */}
+                <View style={[
+                    styles.quoteSection, 
+                    { 
+                        backgroundColor: theme.quoteBg,
+                        borderLeftWidth: 6,
+                        borderLeftColor: theme.accentPrimary,
+                        borderRadius: 12,
+                        margin: 16 
+                    }
+                ]}>
                     <View style={styles.quoteTextContainer}>
                         <Text style={[styles.quoteTitle, { color: theme.text }]}>{i18n.t('quote')}</Text>
                         <Text style={[styles.quoteContent, { color: theme.text }]}>
-                            {i18n.t('quoteContent')}
+                            {quote.content}
                         </Text>
                         <Text style={[styles.quoteAuthor, { color: theme.secondaryText }]}>
-                            {i18n.t('quoteAuthor')}
+                            {quote.author}
                         </Text>
                     </View>
                 </View>
                 
-                {/* Streak Counter Section */}
-                <View style={[styles.streakSection, { backgroundColor: theme.card, borderRadius: 12, margin: 16 }]}>
+                {/* Streak Counter with gradient background */}
+                <View style={[
+                    styles.streakSection, 
+                    { 
+                        backgroundColor: theme.streakBg,
+                        borderRadius: 12,
+                        margin: 16,
+                        overflow: 'hidden',
+                        position: 'relative'
+                    }
+                ]}>
+                    {/* Gradient overlay */}
+                    <View style={[
+                        StyleSheet.absoluteFill,
+                        {
+                            opacity: isDarkMode ? 0.15 : 0.1,
+                            background: `linear-gradient(45deg, ${theme.accentPrimary}, ${theme.accentSecondary})`
+                        }
+                    ]} />
+                    
                     <View style={styles.streakTextContainer}>
                         <Text style={[styles.streakTitle, { color: theme.text }]}>{i18n.t('dailyStreak')}</Text>
                         <View style={styles.streakCountContainer}>
-                            <Trophy size={28} color={theme.accent} weight="fill" />
+                            <Trophy size={28} color={theme.accentPrimary} weight="fill" />
                             <Text style={[styles.streakCount, { color: theme.text }]}>{streak} {i18n.t('days')}</Text>
                         </View>
                     </View>
                     <TouchableOpacity 
-                        style={[styles.streakButton, { backgroundColor: theme.accent }]}
+                        style={[
+                            styles.streakButton, 
+                            { 
+                                backgroundColor: theme.accentPrimary,
+                                shadowColor: theme.accentPrimary,
+                                shadowOpacity: 0.4,
+                                shadowRadius: 10,
+                                shadowOffset: { width: 0, height: 4 }
+                            }
+                        ]}
                         onPress={incrementStreak}
                     >
                         <Check size={20} color="#FFFFFF" weight="bold" />
@@ -257,10 +352,27 @@ const App = () => {
                 <Text style={[styles.sectionTitle, { color: theme.text }]}>{i18n.t('reminders')}</Text>
 
                 {reminders.map((item) => (
-                    <View style={styles.reminderItem} key={item.id}>
+                    <View 
+                        style={[
+                            styles.reminderItem, 
+                            { 
+                                backgroundColor: theme.card,
+                                borderRadius: 12,
+                                marginHorizontal: 16,
+                                marginVertical: 8,
+                                padding: 16
+                            }
+                        ]} 
+                        key={item.id}
+                    >
                         <View style={styles.reminderContent}>
-                            <View style={[styles.reminderIconContainer, { backgroundColor: theme.card }]}>
-                                <Bell size={24} color={theme.text} weight="regular" />
+                            <View style={[
+                                styles.reminderIconContainer, 
+                                { 
+                                    backgroundColor: isDarkMode ? '#2A1E3A' : '#F0E8FF',
+                                }
+                            ]}>
+                                <Bell size={24} color={theme.accentPrimary} weight="regular" />
                             </View>
                             <View style={styles.reminderTextContainer}>
                                 <Text style={[styles.reminderTitle, { color: theme.text }]}>{item.title}</Text>
@@ -270,38 +382,72 @@ const App = () => {
                             </View>
                         </View>
                         <TouchableOpacity onPress={() => startEditReminder(item)}>
-                            <PencilSimple size={24} color={theme.text} weight="regular" />
+                            <PencilSimple size={24} color={theme.accentSecondary} weight="regular" />
                         </TouchableOpacity>
                     </View>
                 ))}
 
                 {/* Progress Section */}
-                <Text style={[styles.sectionTitle, { color: theme.text }]}>{i18n.t('progress')}</Text>
+                <Text style={[styles.sectionTitle, { color: theme.text, marginLeft: 16 }]}>{i18n.t('progress')}</Text>
 
                 {/* Steps Progress */}
-                <View style={styles.progressContainer}>
+                <View style={[
+                    styles.progressContainer, 
+                    { 
+                        backgroundColor: theme.card,
+                        borderRadius: 12,
+                        marginHorizontal: 16,
+                        padding: 16
+                    }
+                ]}>
                     <Text style={[styles.progressTitle, { color: theme.text }]}>{i18n.t('steps')}</Text>
                     <View style={[styles.progressBarContainer, { backgroundColor: theme.progressTrack }]}>
-                        <View style={[styles.progressBar, { width: '75%', backgroundColor: theme.accent }]} />
+                        <View style={[
+                            styles.progressBar, 
+                            { 
+                                width: '75%', 
+                                background: `linear-gradient(90deg, ${theme.accentPrimary}, ${theme.accentSecondary})`
+                            }
+                        ]} />
                     </View>
                     <Text style={[styles.progressText, { color: theme.secondaryText }]}>{i18n.t('stepsProgress')}</Text>
                 </View>
 
                 {/* Exercise Progress */}
-                <View style={styles.progressContainer}>
+                <View style={[
+                    styles.progressContainer, 
+                    { 
+                        backgroundColor: theme.card,
+                        borderRadius: 12,
+                        margin: 16,
+                        padding: 16
+                    }
+                ]}>
                     <Text style={[styles.progressTitle, { color: theme.text }]}>{i18n.t('exercise')}</Text>
                     <View style={[styles.progressBarContainer, { backgroundColor: theme.progressTrack }]}>
-                        <View style={[styles.progressBar, { width: '50%', backgroundColor: theme.accent }]} />
+                        <View style={[
+                            styles.progressBar, 
+                            { 
+                                width: '50%', 
+                                background: `linear-gradient(90deg, ${theme.accentPrimary}, ${theme.accentOrange})`
+                            }
+                        ]} />
                     </View>
                     <Text style={[styles.progressText, { color: theme.secondaryText }]}>{i18n.t('exerciseProgress')}</Text>
                 </View>
                 
-                {/* Add some padding at the bottom for scrolling past floating buttons */}
+                {/* Bottom padding */}
                 <View style={{ height: 100 }} />
             </ScrollView>
 
             {/* Navigation Bar */}
-            <View style={[styles.navBar, { borderTopColor: theme.card, backgroundColor: theme.background }]}>
+            <View style={[
+                styles.navBar, 
+                { 
+                    backgroundColor: theme.card,
+                    borderTopColor: isDarkMode ? '#333333' : '#EDEDED'
+                }
+            ]}>
                 <TouchableOpacity style={styles.navItem}>
                     <House size={24} color={theme.text} weight="fill" />
                     <Text style={[styles.navTextActive, { color: theme.text }]}>{i18n.t('home')}</Text>
@@ -324,9 +470,19 @@ const App = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* Chatbot Floating Button - Moved up */}
+            {/* Chatbot Floating Button with gradient */}
             <TouchableOpacity
-                style={[styles.chatbotButton, { bottom: 100 }]}
+                style={[
+                    styles.chatbotButton, 
+                    { 
+                        bottom: 100,
+                        backgroundColor: theme.chatbotBg,
+                        shadowColor: theme.accentPrimary,
+                        shadowOpacity: 0.6,
+                        shadowRadius: 12,
+                        shadowOffset: { width: 0, height: 4 }
+                    }
+                ]}
                 onPress={() => setChatVisible(true)}
             >
                 <ChatCircleDots size={28} color="#ffffff" weight="fill" />
@@ -340,7 +496,13 @@ const App = () => {
                 onRequestClose={() => setChatVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.chatModal, { backgroundColor: theme.card }]}>
+                    <View style={[
+                        styles.chatModal, 
+                        { 
+                            backgroundColor: theme.modal,
+                            borderColor: isDarkMode ? '#333333' : '#EDEDED'
+                        }
+                    ]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: theme.text }]}>{i18n.t('chatbot')}</Text>
                             <TouchableOpacity onPress={() => setChatVisible(false)}>
@@ -348,7 +510,6 @@ const App = () => {
                             </TouchableOpacity>
                         </View>
                         
-                        {/* Chat messages display area */}
                         <ScrollView style={styles.chatMessagesContainer}>
                             {chatMessages.map(msg => (
                                 <View 
@@ -356,26 +517,55 @@ const App = () => {
                                     style={[
                                         styles.chatBubble,
                                         msg.isUser ? styles.userBubble : styles.botBubble,
-                                        { backgroundColor: msg.isUser ? theme.accent : theme.progressTrack }
+                                        { 
+                                            backgroundColor: msg.isUser 
+                                                ? theme.accentPrimary 
+                                                : isDarkMode 
+                                                    ? '#2D2D2D' 
+                                                    : '#EDEDED'
+                                        }
                                     ]}
                                 >
-                                    <Text style={[styles.chatText, { color: msg.isUser ? '#FFFFFF' : theme.text }]}>
+                                    <Text style={[
+                                        styles.chatText, 
+                                        { 
+                                            color: msg.isUser 
+                                                ? '#FFFFFF' 
+                                                : theme.text 
+                                        }
+                                    ]}>
                                         {msg.text}
                                     </Text>
                                 </View>
                             ))}
                         </ScrollView>
                         
-                        <View style={styles.chatInputContainer}>
+                        <View style={[
+                            styles.chatInputContainer,
+                            { borderColor: isDarkMode ? '#333333' : '#EDEDED' }
+                        ]}>
                             <TextInput
-                                style={[styles.textInput, { color: theme.text, borderColor: theme.progressTrack }]}
+                                style={[
+                                    styles.textInput, 
+                                    { 
+                                        color: theme.text, 
+                                        backgroundColor: isDarkMode ? '#2D2D2D' : '#F7F7F7',
+                                        borderColor: isDarkMode ? '#333333' : '#EDEDED'
+                                    }
+                                ]}
                                 placeholder={i18n.t('typeMessage')}
                                 placeholderTextColor={theme.secondaryText}
                                 value={message}
                                 onChangeText={setMessage}
                             />
-                            <TouchableOpacity onPress={sendMessage}>
-                                <PaperPlaneRight size={24} color={theme.text} />
+                            <TouchableOpacity 
+                                onPress={sendMessage}
+                                style={[
+                                    styles.sendButton,
+                                    { backgroundColor: theme.accentPrimary }
+                                ]}
+                            >
+                                <PaperPlaneRight size={20} color="#FFFFFF" weight="fill" />
                             </TouchableOpacity>
                         </View>
                     </View>
@@ -390,7 +580,13 @@ const App = () => {
                 onRequestClose={() => setEditModalVisible(false)}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={[styles.editModal, { backgroundColor: theme.card }]}>
+                    <View style={[
+                        styles.editModal, 
+                        { 
+                            backgroundColor: theme.modal,
+                            borderColor: isDarkMode ? '#333333' : '#EDEDED'
+                        }
+                    ]}>
                         <View style={styles.modalHeader}>
                             <Text style={[styles.modalTitle, { color: theme.text }]}>{i18n.t('edit')}</Text>
                             <TouchableOpacity onPress={() => setEditModalVisible(false)}>
@@ -401,14 +597,30 @@ const App = () => {
                         <View style={styles.editFormContainer}>
                             <Text style={[styles.inputLabel, { color: theme.text }]}>{i18n.t('reminder')}</Text>
                             <TextInput
-                                style={[styles.editInput, { color: theme.text, borderColor: theme.progressTrack }]}
+                                style={[
+                                    styles.editInput, 
+                                    { 
+                                        color: theme.text, 
+                                        backgroundColor: isDarkMode ? '#2D2D2D' : '#F7F7F7',
+                                        borderColor: isDarkMode ? '#333333' : '#EDEDED'
+                                    }
+                                ]}
                                 value={editTitle}
                                 onChangeText={setEditTitle}
                             />
                             
                             <Text style={[styles.inputLabel, { color: theme.text, marginTop: 16 }]}>{i18n.t('details')}</Text>
                             <TextInput
-                                style={[styles.editInput, { color: theme.text, borderColor: theme.progressTrack }]}
+                                style={[
+                                    styles.editInput, 
+                                    { 
+                                        color: theme.text, 
+                                        backgroundColor: isDarkMode ? '#2D2D2D' : '#F7F7F7',
+                                        borderColor: isDarkMode ? '#333333' : '#EDEDED',
+                                        height: 100,
+                                        textAlignVertical: 'top'
+                                    }
+                                ]}
                                 value={editDetails}
                                 onChangeText={setEditDetails}
                                 multiline
@@ -416,14 +628,29 @@ const App = () => {
                             
                             <View style={styles.editButtonsContainer}>
                                 <TouchableOpacity 
-                                    style={[styles.editButton, { backgroundColor: 'transparent', borderColor: theme.secondaryText, borderWidth: 1 }]}
+                                    style={[
+                                        styles.editButton, 
+                                        { 
+                                            backgroundColor: 'transparent', 
+                                            borderColor: theme.secondaryText 
+                                        }
+                                    ]}
                                     onPress={() => setEditModalVisible(false)}
                                 >
                                     <Text style={[styles.editButtonText, { color: theme.secondaryText }]}>{i18n.t('cancel')}</Text>
                                 </TouchableOpacity>
                                 
                                 <TouchableOpacity 
-                                    style={[styles.editButton, { backgroundColor: theme.accent }]}
+                                    style={[
+                                        styles.editButton, 
+                                        { 
+                                            backgroundColor: theme.accentPrimary,
+                                            shadowColor: theme.accentPrimary,
+                                            shadowOpacity: 0.3,
+                                            shadowRadius: 6,
+                                            shadowOffset: { width: 0, height: 2 }
+                                        }
+                                    ]}
                                     onPress={saveEditedReminder}
                                 >
                                     <Text style={styles.editButtonText}>{i18n.t('save')}</Text>
@@ -462,10 +689,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 28,
         fontWeight: 'bold',
         flex: 1,
-        textAlign: 'center',
+        textAlign: 'left',
     },
     quoteSection: {
         padding: 20,
@@ -525,22 +752,21 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 22,
         fontWeight: 'bold',
-        paddingHorizontal: 16,
         paddingBottom: 12,
         paddingTop: 20,
+        paddingLeft: 16,
     },
     reminderItem: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
         minHeight: 72,
     },
     reminderContent: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 16,
+        flex: 1,
     },
     reminderIconContainer: {
         width: 48,
@@ -552,6 +778,7 @@ const styles = StyleSheet.create({
     reminderTextContainer: {
         flexDirection: 'column',
         justifyContent: 'center',
+        flex: 1,
     },
     reminderTitle: {
         fontSize: 16,
@@ -563,7 +790,6 @@ const styles = StyleSheet.create({
     progressContainer: {
         flexDirection: 'column',
         gap: 12,
-        padding: 16,
     },
     progressTitle: {
         fontSize: 16,
@@ -606,14 +832,9 @@ const styles = StyleSheet.create({
     chatbotButton: {
         position: 'absolute',
         right: 20,
-        backgroundColor: '#019863',
-        padding: 14,
+        padding: 16,
         borderRadius: 30,
         elevation: 5,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
     },
     modalOverlay: {
         flex: 1,
@@ -627,11 +848,13 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         display: 'flex',
         flexDirection: 'column',
+        borderWidth: 1,
     },
     editModal: {
         padding: 16,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
+        borderWidth: 1,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -647,7 +870,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         borderTopWidth: 1,
-        borderColor: '#ccc',
         paddingTop: 12,
         gap: 8,
         marginTop: 'auto',
@@ -658,6 +880,12 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderRadius: 8,
         paddingHorizontal: 12,
+    },
+    sendButton: {
+        padding: 10,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     chatMessagesContainer: {
         flex: 1,
