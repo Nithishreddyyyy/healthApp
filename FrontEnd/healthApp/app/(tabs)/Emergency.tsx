@@ -17,17 +17,29 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Sun, Moon, X, MapPin } from 'phosphor-react-native';
-// For the map component - you'll need to install this
-// npm install react-native-maps
 import MapView from 'react-native-maps';
 
 const HelpScreen = () => {
-  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
+  const [darkMode, setDarkMode] = useState(true);
   const [animation] = useState(new Animated.Value(0));
   const [breatheAnim] = useState(new Animated.Value(1));
   const [ambulanceModalVisible, setAmbulanceModalVisible] = useState(false);
   const [pickupLocation, setPickupLocation] = useState('');
   const [destination, setDestination] = useState('');
+
+  // Vibrant color palette
+  const colors = {
+    background: darkMode ? '#0E0E0E' : '#F7F7F7',
+    card: darkMode ? '#1A1A1A' : '#FFFFFF',
+    text: darkMode ? '#F4F4F4' : '#1A1A1A',
+    secondaryText: darkMode ? '#A0A0A0' : '#666666',
+    border: darkMode ? '#333333' : '#EDEDED',
+    accentPrimary: '#5B00FF',
+    accentSecondary: '#FF4F8B',
+    accentTertiary: '#1A00FF',
+    accentOrange: '#FF6A3D',
+    emergencyRed: '#FF5252',
+  };
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
@@ -92,7 +104,7 @@ const HelpScreen = () => {
 
   return (
     <LinearGradient
-      colors={darkMode ? ['#000000', '#2c2c2e'] : ['#f8f9fa', '#e9ecef']}
+      colors={darkMode ? ['#0E0E0E', '#1A1A1A'] : ['#F7F7F7', '#EDEDED']}
       style={styles.gradientBackground}
     >
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -100,19 +112,29 @@ const HelpScreen = () => {
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
               <View style={styles.headerTextContainer}>
-                <Text style={[styles.welcomeText, { color: darkMode ? '#aaa' : '#555' }]}>
+                <Text style={[styles.welcomeText, { color: colors.secondaryText }]}>
                   Don't Worry
                 </Text>
-                <Text style={[styles.headerText, { color: darkMode ? '#fff' : '#222' }]}>
+                <Text style={[styles.headerText, { color: colors.text }]}>
                   User, Your Family is here.
                 </Text>
               </View>
 
-              <TouchableOpacity onPress={toggleDarkMode} style={styles.iconButton}>
+              <TouchableOpacity 
+                onPress={toggleDarkMode} 
+                style={[
+                  styles.iconButton,
+                  {
+                    backgroundColor: darkMode ? '#2A1E3A' : '#F0E8FF',
+                    borderRadius: 20,
+                    padding: 8
+                  }
+                ]}
+              >
                 {darkMode ? (
-                  <Sun size={28} color="#fff" weight="bold" />
+                  <Sun size={24} color={colors.accentSecondary} weight="bold" />
                 ) : (
-                  <Moon size={28} color="#222" weight="bold" />
+                  <Moon size={24} color={colors.accentPrimary} weight="bold" />
                 )}
               </TouchableOpacity>
             </View>
@@ -130,7 +152,7 @@ const HelpScreen = () => {
                     );
                   }}
                 >
-                  <View style={styles.sosInnerCircle}>
+                  <View style={[styles.sosInnerCircle, { backgroundColor: colors.emergencyRed }]}>
                     <Text style={styles.sosButtonText}>Help</Text>
                     <Text style={styles.sosButtonSubText}>CLICK IN CASES OF AN EMERGENCY</Text>
                   </View>
@@ -140,14 +162,13 @@ const HelpScreen = () => {
 
             <View style={styles.optionsContainer}>
               {/* Ambulance Option Card */}
-              <View style={[styles.optionCard, { backgroundColor: darkMode ? '#333' : 'white' }]}>
+              <View style={[styles.optionCard, { backgroundColor: colors.card }]}>
                 <View style={styles.ambulanceImageContainer}>
-                  {/* Using a static color instead of an image to avoid path issues */}
-                  <View style={styles.ambulanceImagePlaceholder}>
+                  <View style={[styles.ambulanceImagePlaceholder, { backgroundColor: darkMode ? '#2D2D2D' : '#F5F5F5' }]}>
                     <Text style={styles.ambulanceImageText}>🚑</Text>
                   </View>
                 </View>
-                <Text style={[styles.optionText, { color: darkMode ? '#eee' : '#444' }]}>
+                <Text style={[styles.optionText, { color: colors.text }]}>
                   Need Medical Transportation?
                 </Text>
                 <TouchableOpacity 
@@ -155,7 +176,7 @@ const HelpScreen = () => {
                   onPress={() => setAmbulanceModalVisible(true)}
                 >
                   <LinearGradient
-                    colors={['#D32F2F', '#B71C1C']}
+                    colors={[colors.accentPrimary, colors.accentTertiary]}
                     style={styles.buttonGradient}
                   >
                     <Text style={styles.actionButtonText}>Book Ambulance</Text>
@@ -163,13 +184,13 @@ const HelpScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.optionCard, { backgroundColor: darkMode ? '#333' : 'white' }]}>
-                <Text style={[styles.optionText, { color: darkMode ? '#eee' : '#444' }]}>
+              <View style={[styles.optionCard, { backgroundColor: colors.card }]}>
+                <Text style={[styles.optionText, { color: colors.text }]}>
                   Feeling Lost? Call Your Close ones
                 </Text>
                 <TouchableOpacity style={styles.actionButton} onPress={callEmergencyContact}>
                   <LinearGradient
-                    colors={['black', '#182848']}
+                    colors={[colors.accentSecondary, colors.accentOrange]}
                     style={styles.buttonGradient}
                   >
                     <Text style={styles.actionButtonText}>Call Emergency Contacts</Text>
@@ -177,13 +198,13 @@ const HelpScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              <View style={[styles.optionCard, { backgroundColor: darkMode ? '#333' : 'white' }]}>
-                <Text style={[styles.optionText, { color: darkMode ? '#eee' : '#444' }]}>
+              <View style={[styles.optionCard, { backgroundColor: colors.card }]}>
+                <Text style={[styles.optionText, { color: colors.text }]}>
                   Panicking? Listen to some calming music
                 </Text>
                 <TouchableOpacity style={styles.actionButton} onPress={playMusic}>
                   <LinearGradient
-                    colors={['black', '#182848']}
+                    colors={[colors.accentPrimary, colors.accentSecondary]}
                     style={styles.buttonGradient}
                   >
                     <Text style={styles.actionButtonText}>Play Music</Text>
@@ -202,14 +223,14 @@ const HelpScreen = () => {
         visible={ambulanceModalVisible}
         onRequestClose={() => setAmbulanceModalVisible(false)}
       >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Book Ambulance</Text>
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Book Ambulance</Text>
             <TouchableOpacity 
               style={styles.closeButton}
               onPress={() => setAmbulanceModalVisible(false)}
             >
-              <X size={24} color="#333" weight="bold" />
+              <X size={24} color={colors.text} weight="bold" />
             </TouchableOpacity>
           </View>
           
@@ -225,23 +246,23 @@ const HelpScreen = () => {
             />
           </View>
           
-          <View style={styles.inputContainer}>
-            <View style={styles.inputWrapper}>
-              <MapPin size={20} color="#D32F2F" />
+          <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: darkMode ? '#2D2D2D' : '#FFFFFF' }]}>
+              <MapPin size={20} color={colors.accentPrimary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Enter pickup location"
-                placeholderTextColor="#888"
+                placeholderTextColor={colors.secondaryText}
                 value={pickupLocation}
                 onChangeText={setPickupLocation}
               />
             </View>
-            <View style={styles.inputWrapper}>
-              <MapPin size={20} color="#333" />
+            <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: darkMode ? '#2D2D2D' : '#FFFFFF' }]}>
+              <MapPin size={20} color={colors.accentPrimary} />
               <TextInput
-                style={styles.input}
+                style={[styles.input, { color: colors.text }]}
                 placeholder="Enter destination"
-                placeholderTextColor="#888"
+                placeholderTextColor={colors.secondaryText}
                 value={destination}
                 onChangeText={setDestination}
               />
@@ -250,7 +271,7 @@ const HelpScreen = () => {
           
           <TouchableOpacity style={styles.bookNowButton} onPress={bookAmbulance}>
             <LinearGradient
-              colors={['#D32F2F', '#B71C1C']}
+              colors={[colors.accentPrimary, colors.accentTertiary]}
               style={styles.bookNowGradient}
             >
               <Text style={styles.bookNowText}>BOOK NOW</Text>
@@ -298,7 +319,6 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     padding: 8,
-    borderRadius: 100,
   },
   sosButtonContainer: {
     alignItems: 'center',
@@ -322,7 +342,6 @@ const styles = StyleSheet.create({
     width: 180,
     height: 180,
     borderRadius: 90,
-    backgroundColor: '#FF5252',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -380,11 +399,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
   },
-  // Using a placeholder instead of an image
   ambulanceImagePlaceholder: {
     width: '100%',
     height: 120,
-    backgroundColor: '#f5f5f5',
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
@@ -392,11 +409,8 @@ const styles = StyleSheet.create({
   ambulanceImageText: {
     fontSize: 60,
   },
-  
-  // Modal Styles
   modalContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -404,13 +418,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: 'white',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
   },
   closeButton: {
     padding: 5,
@@ -425,24 +436,20 @@ const styles = StyleSheet.create({
   },
   inputContainer: {
     padding: 15,
-    backgroundColor: 'white',
     marginTop: 1,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
     borderRadius: 8,
     marginBottom: 15,
     paddingHorizontal: 10,
-    backgroundColor: '#fff',
   },
   input: {
     flex: 1,
     height: 50,
     paddingLeft: 10,
-    color: '#333',
   },
   bookNowButton: {
     margin: 15,
