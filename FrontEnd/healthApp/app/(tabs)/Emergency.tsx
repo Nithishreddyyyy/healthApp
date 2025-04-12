@@ -13,21 +13,34 @@ import {
   ScrollView,
   Modal,
   TextInput,
-  Image,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Sun, Moon, X, MapPin } from 'phosphor-react-native';
-import MapView from 'react-native-maps';
+import { Ionicons } from '@expo/vector-icons';
+import MapView, { Marker, PROVIDER_DEFAULT } from 'react-native-maps';
+import * as Location from 'expo-location';
 
+// Using Ionicons instead of phosphor-react-native to avoid compatibility issues
 const HelpScreen = () => {
   const [darkMode, setDarkMode] = useState(true);
   const [animation] = useState(new Animated.Value(0));
   const [breatheAnim] = useState(new Animated.Value(1));
   const [ambulanceModalVisible, setAmbulanceModalVisible] = useState(false);
   const [pickupLocation, setPickupLocation] = useState('');
-  const [destination, setDestination] = useState('');
+  const [destination] = useState('Fortis Hospital Rajajinagar, Bangalore');
+  const [location, setLocation] = useState(null);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [eta, setEta] = useState(null);
+  const mapRef = useRef(null);
 
-  // Vibrant color palette
+  const hospitalCoordinates = {
+    latitude: 12.9954,
+    longitude: 77.5513,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  };
+
   const colors = {
     background: darkMode ? '#0E0E0E' : '#F7F7F7',
     card: darkMode ? '#1A1A1A' : '#FFFFFF',
@@ -62,19 +75,69 @@ const HelpScreen = () => {
       .catch(() => Alert.alert('Error', 'Failed to make call'));
   };
 
-  const playMusic = () => {
-    Alert.alert('Playing Music', 'Calming music would start playing now');
+  const requestLocationPermission = async () => {
+    setIsLoading(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+
+      if (status !== 'granted') {
+        setErrorMsg('Permission to access location was denied');
+        setIsLoading(false);
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      setLocation(location);
+      setPickupLocation(`${location.coords.latitude.toFixed(6)}, ${location.coords.longitude.toFixed(6)}`);
+
+      calculateETA(location.coords);
+
+      if (mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        }, 1000);
+      }
+    } catch (error) {
+      setErrorMsg('Error getting your location');
+      console.log('Location error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos((lat1) * (Math.PI / 180)) * Math.cos((lat2) * (Math.PI / 180)) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  };
+
+  const calculateETA = (coordinates) => {
+    const distance = calculateDistance(
+      coordinates.latitude,
+      coordinates.longitude,
+      hospitalCoordinates.latitude,
+      hospitalCoordinates.longitude
+    );
+    const timeInMinutes = Math.round((distance / 50) * 60 * 1.3);
+    setEta(timeInMinutes);
   };
 
   const bookAmbulance = () => {
-    if (!pickupLocation || !destination) {
-      Alert.alert('Missing Information', 'Please enter both pickup location and destination');
-      return;
-    }
-    
     Alert.alert(
-      'Ambulance Booked',
-      `An ambulance is on the way to ${pickupLocation}. ETA: 10 minutes`,
+      'Ambulance Dispatched',
+      'An ambulance is on its way to your location',
       [{ text: 'OK', onPress: () => setAmbulanceModalVisible(false) }]
     );
   };
@@ -120,8 +183,8 @@ const HelpScreen = () => {
                 </Text>
               </View>
 
-              <TouchableOpacity 
-                onPress={toggleDarkMode} 
+              <TouchableOpacity
+                onPress={toggleDarkMode}
                 style={[
                   styles.iconButton,
                   {
@@ -132,9 +195,9 @@ const HelpScreen = () => {
                 ]}
               >
                 {darkMode ? (
-                  <Sun size={24} color={colors.accentSecondary} weight="bold" />
+                  <Ionicons name="sunny" size={24} color={colors.accentSecondary} />
                 ) : (
-                  <Moon size={24} color={colors.accentPrimary} weight="bold" />
+                  <Ionicons name="moon" size={24} color={colors.accentPrimary} />
                 )}
               </TouchableOpacity>
             </View>
@@ -160,8 +223,48 @@ const HelpScreen = () => {
               </Animated.View>
             </View>
 
+            <View style={[styles.locationCard, { backgroundColor: colors.card }]}>
+              <View style={styles.locationHeaderRow}>
+                <Text style={[styles.locationHeader, { color: colors.text }]}>
+                  Fortis Hospital Route
+                </Text>
+                {eta && (
+                  <View style={styles.etaBadge}>
+                    <Ionicons name="time" size={16} color="white" />
+                    <Text style={styles.etaText}>{eta} mins</Text>
+                  </View>
+                )}
+              </View>
+
+              <TouchableOpacity
+                style={[styles.locationButton, { backgroundColor: darkMode ? '#2D2D2D' : '#F0F0F0' }]}
+                onPress={requestLocationPermission}
+              >
+                <Ionicons name="location" size={20} color={colors.accentPrimary} />
+                <Text style={[styles.locationButtonText, { color: colors.text }]}>
+                  {location ? 'How far is your prefered Hospital' : 'Get my location'}
+                </Text>
+              </TouchableOpacity>
+
+              {errorMsg && (
+                <Text style={[styles.errorText, { color: colors.emergencyRed }]}>
+                  {errorMsg}
+                </Text>
+              )}
+
+              {location && (
+                <View style={styles.locationInfo}>
+                  <Text style={[styles.destinationText, { color: colors.secondaryText }]}>
+                    From: {pickupLocation}
+                  </Text>
+                  <Text style={[styles.destinationText, { color: colors.secondaryText }]}>
+                    To: {destination}
+                  </Text>
+                </View>
+              )}
+            </View>
+
             <View style={styles.optionsContainer}>
-              {/* Ambulance Option Card */}
               <View style={[styles.optionCard, { backgroundColor: colors.card }]}>
                 <View style={styles.ambulanceImageContainer}>
                   <View style={[styles.ambulanceImagePlaceholder, { backgroundColor: darkMode ? '#2D2D2D' : '#F5F5F5' }]}>
@@ -171,8 +274,8 @@ const HelpScreen = () => {
                 <Text style={[styles.optionText, { color: colors.text }]}>
                   Need Medical Transportation?
                 </Text>
-                <TouchableOpacity 
-                  style={styles.actionButton} 
+                <TouchableOpacity
+                  style={styles.actionButton}
                   onPress={() => setAmbulanceModalVisible(true)}
                 >
                   <LinearGradient
@@ -197,26 +300,11 @@ const HelpScreen = () => {
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
-
-              <View style={[styles.optionCard, { backgroundColor: colors.card }]}>
-                <Text style={[styles.optionText, { color: colors.text }]}>
-                  Panicking? Listen to some calming music
-                </Text>
-                <TouchableOpacity style={styles.actionButton} onPress={playMusic}>
-                  <LinearGradient
-                    colors={[colors.accentPrimary, colors.accentSecondary]}
-                    style={styles.buttonGradient}
-                  >
-                    <Text style={styles.actionButtonText}>Play Music</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-              </View>
             </View>
           </SafeAreaView>
         </Animated.View>
       </ScrollView>
 
-      {/* Ambulance Booking Modal */}
       <Modal
         animationType="slide"
         transparent={false}
@@ -225,56 +313,102 @@ const HelpScreen = () => {
       >
         <SafeAreaView style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>Book Ambulance</Text>
-            <TouchableOpacity 
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Book Ambulance to Fortis Hospital</Text>
+            <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setAmbulanceModalVisible(false)}
             >
-              <X size={24} color={colors.text} weight="bold" />
+              <Ionicons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.mapContainer}>
-            <MapView
-              style={styles.map}
-              initialRegion={{
-                latitude: 37.78825,
-                longitude: -122.4324,
-                latitudeDelta: 0.0922,
-                longitudeDelta: 0.0421,
-              }}
-            />
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.accentPrimary} />
+                <Text style={[styles.loadingText, { color: colors.text }]}>Getting your location...</Text>
+              </View>
+            ) : (
+              <MapView
+                ref={mapRef}
+                provider={PROVIDER_DEFAULT} // Changed from PROVIDER_GOOGLE to default
+                style={styles.map}
+                initialRegion={location ? {
+                  latitude: location.coords.latitude,
+                  longitude: location.coords.longitude,
+                  latitudeDelta: 0.1,
+                  longitudeDelta: 0.1,
+                } : hospitalCoordinates}
+              >
+                {location && (
+                  <Marker
+                    coordinate={{
+                      latitude: location.coords.latitude,
+                      longitude: location.coords.longitude,
+                    }}
+                    title="Your Location"
+                    description="You are here"
+                  >
+                    <View style={styles.userMarker}>
+                      <Ionicons name="person" size={18} color="white" />
+                    </View>
+                  </Marker>
+                )}
+
+                <Marker
+                  coordinate={{
+                    latitude: hospitalCoordinates.latitude,
+                    longitude: hospitalCoordinates.longitude,
+                  }}
+                  title="Fortis Hospital Rajajinagar"
+                  description="Your destination"
+                >
+                  <View style={styles.hospitalMarker}>
+                    <Ionicons name="medical" size={18} color="white" />
+                  </View>
+                </Marker>
+              </MapView>
+            )}
           </View>
-          
+
           <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
+            <View style={[styles.etaContainer, { backgroundColor: darkMode ? '#2D2D2D' : '#F0F0F0' }]}>
+              <Ionicons name="time" size={20} color={colors.accentPrimary} />
+              <Text style={[styles.etaInfoText, { color: colors.text }]}>
+                {eta ? `Estimated Time to Hospital: ${eta} minutes` : 'Calculating ETA...'}
+              </Text>
+            </View>
+
             <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: darkMode ? '#2D2D2D' : '#FFFFFF' }]}>
-              <MapPin size={20} color={colors.accentPrimary} />
+              <Ionicons name="location" size={20} color={colors.accentPrimary} />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="Enter pickup location"
+                placeholder="Your location"
                 placeholderTextColor={colors.secondaryText}
                 value={pickupLocation}
                 onChangeText={setPickupLocation}
+                editable={false}
               />
+              <TouchableOpacity onPress={requestLocationPermission} style={styles.refreshButton}>
+                <Ionicons name="refresh" size={20} color={colors.accentPrimary} />
+              </TouchableOpacity>
             </View>
             <View style={[styles.inputWrapper, { borderColor: colors.border, backgroundColor: darkMode ? '#2D2D2D' : '#FFFFFF' }]}>
-              <MapPin size={20} color={colors.accentPrimary} />
+              <Ionicons name="location" size={20} color={colors.accentSecondary} />
               <TextInput
                 style={[styles.input, { color: colors.text }]}
-                placeholder="Enter destination"
-                placeholderTextColor={colors.secondaryText}
                 value={destination}
-                onChangeText={setDestination}
+                editable={false}
               />
             </View>
           </View>
-          
+
           <TouchableOpacity style={styles.bookNowButton} onPress={bookAmbulance}>
             <LinearGradient
               colors={[colors.accentPrimary, colors.accentTertiary]}
               style={styles.bookNowGradient}
             >
-              <Text style={styles.bookNowText}>BOOK NOW</Text>
+              <Text style={styles.bookNowText}>BOOK AMBULANCE NOW</Text>
             </LinearGradient>
           </TouchableOpacity>
         </SafeAreaView>
@@ -303,7 +437,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
     paddingTop: 10,
   },
   headerTextContainer: {
@@ -323,7 +457,7 @@ const styles = StyleSheet.create({
   sosButtonContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: 30,
   },
   sosButton: {
     width: 220,
@@ -361,8 +495,66 @@ const styles = StyleSheet.create({
     marginTop: 5,
     letterSpacing: 0.5,
   },
-  optionsContainer: {
+  locationCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  locationHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  locationHeader: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  etaBadge: {
+    flexDirection: 'row',
+    backgroundColor: '#5B00FF',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  etaText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 4,
+    fontSize: 14,
+  },
+  locationButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 10,
+  },
+  locationButtonText: {
+    marginLeft: 8,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  locationInfo: {
     marginTop: 10,
+  },
+  destinationText: {
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  errorText: {
+    fontSize: 14,
+    marginTop: 5,
+    marginBottom: 5,
+  },
+  optionsContainer: {
+    marginTop: 5,
     marginBottom: 20,
   },
   optionCard: {
@@ -434,9 +626,44 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+  },
+  userMarker: {
+    backgroundColor: '#5B00FF',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: 'white',
+  },
+  hospitalMarker: {
+    backgroundColor: '#FF4F8B',
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 3,
+    borderColor: 'white',
+  },
   inputContainer: {
     padding: 15,
     marginTop: 1,
+  },
+  etaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 10,
+    marginBottom: 15,
+  },
+  etaInfoText: {
+    marginLeft: 10,
+    fontSize: 16,
+    fontWeight: '500',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -450,6 +677,9 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 50,
     paddingLeft: 10,
+  },
+  refreshButton: {
+    padding: 8,
   },
   bookNowButton: {
     margin: 15,
