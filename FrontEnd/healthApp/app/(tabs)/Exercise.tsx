@@ -115,7 +115,10 @@ const Exercise = () => {
                   }
                 ]}
                 activeOpacity={0.8}
+<<<<<<< HEAD
                 onPress={() => item.title === 'Finger Move' ? router.push('/DoorGame') : null}
+=======
+>>>>>>> Nithish
               >
                 <View style={styles.exerciseItemLeft}>
                   <Image

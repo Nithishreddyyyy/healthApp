@@ -227,6 +227,7 @@ const App = () => {
         setChatMessages([...chatMessages, userMessage]);
         setMessage('');
         
+<<<<<<< HEAD
         try {
             const response = await fetch('http://192.168.7.149:5000/ask', {
                 method: 'POST',
@@ -244,6 +245,9 @@ const App = () => {
                 throw new Error(data.error);
             }
             
+=======
+        setTimeout(() => {
+>>>>>>> Nithish
             const botResponse = { 
                 id: chatMessages.length + 2, 
                 text: data.response || "I couldn't get a response from the server.", 

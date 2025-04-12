@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Image, SafeAreaView, useColorScheme } from 'react-native';
 
 const Utilities = () => {
   // Sample exercise data
@@ -80,11 +80,42 @@ const Utilities = () => {
 
   // State
   const [searchValue, setSearchValue] = useState("");
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [showClear, setShowClear] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true); // Set dark mode as default
+  const systemColorScheme = useColorScheme();
+
+  // Vibrant color palette for dark/light modes
+  const theme = {
+    // Backgrounds
+    background: isDarkMode ? '#0E0E0E' : '#F7F7F7',
+    card: isDarkMode ? '#1A1A1A' : '#FFFFFF',
+    input: isDarkMode ? '#2D2D2D' : '#FFFFFF',
+    
+    // Text
+    text: isDarkMode ? '#F4F4F4' : '#1A1A1A',
+    secondaryText: isDarkMode ? '#A0A0A0' : '#666666',
+    
+    // Borders
+    border: isDarkMode ? '#333333' : '#EDEDED',
+    
+    // Accent colors (gradient components)
+    accentPrimary: '#5B00FF',
+    accentSecondary: '#FF4F8B',
+    accentTertiary: '#1A00FF',
+    accentOrange: '#FF6A3D',
+    
+    // Special elements
+    toggleBg: isDarkMode ? '#2A1E3A' : '#F0E8FF',
+  };
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   // Handle search
-  const handleSearch = (value: string) => {
+  const handleSearch = (value) => {
     if (!value.trim()) {
       setRecommendations([]);
       return;
@@ -109,24 +140,132 @@ const Utilities = () => {
   };
 
   // Handle quick access button press
-  const handleQuickAccessPress = (option: string) => {
+  const handleQuickAccessPress = (option) => {
     setSearchValue(option);
     setShowClear(true);
     handleSearch(option);
   };
 
+  // Custom Moon Icon Component
+  const MoonIcon = () => (
+    <View>
+      <View style={{ 
+        width: 20, 
+        height: 20, 
+        borderRadius: 10, 
+        borderWidth: 2,
+        borderColor: theme.accentPrimary,
+        backgroundColor: 'transparent',
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        <View style={{ 
+          position: 'absolute',
+          width: 15,
+          height: 15,
+          borderRadius: 7.5,
+          backgroundColor: theme.accentPrimary,
+          right: -5,
+          top: -5
+        }} />
+      </View>
+    </View>
+  );
+
+  // Custom Sun Icon Component
+  const SunIcon = () => (
+    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ 
+        width: 12, 
+        height: 12, 
+        borderRadius: 6, 
+        backgroundColor: theme.accentOrange 
+      }} />
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((degree, index) => (
+        <View 
+          key={index}
+          style={{
+            position: 'absolute',
+            height: 8,
+            width: 2,
+            backgroundColor: theme.accentOrange,
+            transform: [
+              { rotate: `${degree}deg` },
+              { translateY: -10 }
+            ]
+          }}
+        />
+      ))}
+    </View>
+  );
+
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <ScrollView className="px-5">
-        <View className="max-w-lg mx-auto py-5">
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScrollView style={{ paddingHorizontal: 20 }}>
+        <View style={{ maxWidth: 500, marginHorizontal: 'auto', paddingTop: 20 }}>
+          {/* Dark Mode Toggle Button - positioned at the top right */}
+          <View style={{ 
+            flexDirection: 'row', 
+            justifyContent: 'flex-end', 
+            marginBottom: 16,
+            paddingTop: 8
+          }}>
+            <TouchableOpacity 
+              style={{ 
+                padding: 10,
+                borderRadius: 20,
+                backgroundColor: theme.toggleBg,
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 44,
+                height: 44,
+                borderWidth: 1,
+                borderColor: isDarkMode ? theme.accentPrimary : theme.accentOrange
+              }}
+              onPress={toggleDarkMode}
+              activeOpacity={0.8}
+            >
+              {isDarkMode ? <MoonIcon /> : <SunIcon />}
+            </TouchableOpacity>
+          </View>
+          
           {/* Header */}
-          <Text className="text-center text-2xl font-bold mb-6">Surgery Exercise Recommendations</Text>
+          <View style={{ marginBottom: 24 }}>
+            <Text style={{ 
+              textAlign: 'center', 
+              fontSize: 24, 
+              fontWeight: 'bold', 
+              color: theme.text,
+              textShadowColor: isDarkMode ? theme.accentPrimary : theme.accentOrange,
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: isDarkMode ? 10 : 5,
+              opacity: isDarkMode ? 0.9 : 1
+            }}>
+              Surgery Exercise Recommendations
+            </Text>
+          </View>
           
           {/* Search Input */}
-          <View className="relative mb-6">
+          <View style={{ position: 'relative', marginBottom: 24 }}>
             <TextInput
-              className="w-full px-4 py-3 border border-gray-300 rounded-full text-base"
-              placeholder="Value"
+              style={{ 
+                width: '100%', 
+                paddingHorizontal: 16, 
+                paddingVertical: 12, 
+                borderWidth: 1, 
+                borderColor: theme.border, 
+                borderRadius: 9999, 
+                fontSize: 16,
+                backgroundColor: theme.input,
+                color: theme.text,
+                shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+                shadowOpacity: 0.1,
+                shadowOffset: { width: 0, height: 2 },
+                shadowRadius: 4,
+                elevation: 2
+              }}
+              placeholder="Search by surgery type"
+              placeholderTextColor={theme.secondaryText}
               value={searchValue}
               onChangeText={(text) => {
                 setSearchValue(text);
@@ -136,51 +275,139 @@ const Utilities = () => {
             />
             {showClear && (
               <TouchableOpacity 
-                className="absolute right-4 top-3"
+                style={{ position: 'absolute', right: 16, top: 12 }}
                 onPress={clearSearch}
+                activeOpacity={0.7}
               >
-                <Text className="text-gray-500 text-lg">✕</Text>
+                <Text style={{ color: theme.accentSecondary, fontSize: 18 }}>✕</Text>
               </TouchableOpacity>
             )}
           </View>
           
           {/* Quick Access Section */}
-          <View className="bg-gray-100 rounded-xl p-4 mb-6">
-            <Text className="text-center font-medium mb-4">QUICK ACCESS</Text>
-            <View className="flex-row flex-wrap justify-between">
+          <View style={{ 
+            backgroundColor: theme.card, 
+            borderRadius: 12, 
+            padding: 16, 
+            marginBottom: 24,
+            borderWidth: 1,
+            borderColor: theme.border,
+            shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+            shadowOpacity: 0.1,
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 8
+          }}>
+            <Text style={{ 
+              textAlign: 'center', 
+              fontWeight: '500', 
+              marginBottom: 16, 
+              color: theme.text,
+              fontSize: 16
+            }}>
+              QUICK ACCESS
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {quickAccessOptions.map((option, index) => (
                 <TouchableOpacity
                   key={index}
-                  className="bg-white rounded-lg w-[30%] h-20 items-center justify-center mb-4"
+                  style={{ 
+                    backgroundColor: theme.input, 
+                    borderRadius: 8, 
+                    width: '30%', 
+                    height: 80, 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    marginBottom: 16,
+                    borderWidth: 1,
+                    borderColor: theme.border,
+                    shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+                    shadowOpacity: 0.05,
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4
+                  }}
                   onPress={() => handleQuickAccessPress(option)}
+                  activeOpacity={0.7}
                 >
-                  <Text className="text-center text-sm">{option}</Text>
+                  <Text style={{ 
+                    textAlign: 'center', 
+                    fontSize: 14, 
+                    color: theme.text,
+                    fontWeight: '500'
+                  }}>
+                    {option}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           </View>
           
           {/* Exercise Recommendations */}
-          <View>
+          <View style={{ paddingBottom: 20 }}>
             {recommendations.length > 0 ? (
               recommendations.map((exercise) => (
-                <View key={exercise.id} className="flex-row bg-gray-100 rounded-xl p-4 mb-4">
-                  <View className="w-24 h-24 bg-white rounded-lg items-center justify-center">
+                <View key={exercise.id} style={{ 
+                  flexDirection: 'row', 
+                  backgroundColor: theme.card, 
+                  borderRadius: 12, 
+                  padding: 16, 
+                  marginBottom: 16,
+                  borderWidth: 1,
+                  borderColor: theme.border,
+                  shadowColor: isDarkMode ? theme.accentPrimary : '#000',
+                  shadowOpacity: 0.1,
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowRadius: 4
+                }}>
+                  <View style={{ 
+                    width: 96, 
+                    height: 96, 
+                    backgroundColor: theme.input, 
+                    borderRadius: 8, 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: theme.border
+                  }}>
                     <Image
                       source={{ uri: exercise.imageUrl }}
-                      className="w-20 h-20"
+                      style={{ width: 80, height: 80, borderRadius: 4 }}
                       resizeMode="contain"
                     />
                   </View>
-                  <View className="ml-4 flex-1">
-                    <Text className="font-medium mb-1">{exercise.name}</Text>
-                    <Text className="text-sm text-gray-600">{exercise.description}</Text>
+                  <View style={{ marginLeft: 16, flex: 1 }}>
+                    <Text style={{ 
+                      fontWeight: '600', 
+                      marginBottom: 4, 
+                      color: theme.text,
+                      fontSize: 16
+                    }}>
+                      {exercise.name}
+                    </Text>
+                    <Text style={{ 
+                      fontSize: 14, 
+                      color: theme.secondaryText,
+                      lineHeight: 20
+                    }}>
+                      {exercise.description}
+                    </Text>
                   </View>
                 </View>
               ))
             ) : searchValue ? (
-              <View className="py-8 items-center">
-                <Text className="text-gray-500">No exercises found for "{searchValue}"</Text>
+              <View style={{ 
+                paddingVertical: 32, 
+                alignItems: 'center',
+                backgroundColor: theme.card,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: theme.border
+              }}>
+                <Text style={{ 
+                  color: theme.secondaryText,
+                  fontSize: 16
+                }}>
+                  No exercises found for "{searchValue}"
+                </Text>
               </View>
             ) : null}
           </View>
