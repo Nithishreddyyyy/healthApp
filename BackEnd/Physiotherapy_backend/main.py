@@ -34,9 +34,9 @@ class PhysioARApp:
         self.last_instructions = set()
         self.instruction_cooldown = 5
         self.current_step = 0
-        self.alignment_threshold = 55.0  # Further lowered threshold for easier success
+        self.alignment_threshold = 70.0  # Increased threshold for harder success
         self.aligned_duration = 0
-        self.time_required = 2.0
+        self.time_required = 3.0  # Increased hold time requirement
         self.last_alignment_check = time.time()
         self.sidebar_width = 250
         self.show_sidebar = False
@@ -44,9 +44,9 @@ class PhysioARApp:
         
         # Enhanced body part tracking sensitivity for 3D tracking
         # Higher values = more importance in accuracy calculation
-        self.leg_sensitivity = 1.5      # Highest weight for leg movements (most important)
-        self.torso_sensitivity = 1.2    # Medium weight for torso (important for stability)
-        self.arm_sensitivity = 0.8      # Lower weight for arms (less important for leg exercises)
+        self.leg_sensitivity = 2.0      # Increased weight for leg movements (most important)
+        self.torso_sensitivity = 1.5    # Increased weight for torso (important for stability)
+        self.arm_sensitivity = 1.2      # Increased weight for arms (more strict overall)
         
         # Improved smoothing for more consistent feedback
         self.alignment_scores_history = []
@@ -186,8 +186,6 @@ class PhysioARApp:
             self.process_feedback(self.smoothed_score, misaligned_joints)
             
             # Display the accuracy score with high visibility
-            cv2.putText(image, f"Similarity: {int(self.smoothed_score)}%", (20, 60),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
             # Draw side progress bar showing real-time accuracy (%)
             image = self.draw_side_progress_bar(image, self.smoothed_score)
@@ -275,6 +273,11 @@ class PhysioARApp:
         # Specific key joints for straight leg raises (based on user-provided coordinates)
         key_straight_leg_joints = [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28]
         
+        # Slightly decreased weights for an easier challenge
+        self.leg_sensitivity = 4.5      # Decreased for easier leg movement matching
+        self.torso_sensitivity = 4.0    # Decreased for more forgiving torso stability
+        self.arm_sensitivity = 3.5      # Decreased for easier arm positioning
+        
         # Calculate the position differences with appropriate weighting
         for idx, ref_pos in self.reference_landmarks.items():
             if idx in current_landmarks:
@@ -290,31 +293,31 @@ class PhysioARApp:
                 dist_2d = np.sqrt((ref_pos[0] - cur[0])**2 + (ref_pos[1] - cur[1])**2)
                 
                 # Use the 3D distance for accuracy calculation
-                dist = dist_3d * 0.4  # Make matching easier (60% more forgiving)
+                dist = dist_3d * 0.35  # Make matching slightly easier (65% more forgiving)
                 
-                # Apply appropriate weights based on body part
+                # Apply appropriate weights based on body part with stricter thresholds
                 if idx in leg_indices:
-                    weight = self.leg_sensitivity * 1.2  # Even higher weight for legs in straight leg raises
+                    weight = self.leg_sensitivity * 1.5  # Increased weight for legs
                     # Give extra importance to the raised leg (left leg in our reference)
                     if idx in [25, 27]:  # Left knee and ankle (raised leg)
-                        weight *= 1.3  # 30% more importance for the key raised leg joints
+                        weight *= 1.5  # 50% more importance for key raised leg joints
                 elif idx in torso_indices:
-                    weight = self.torso_sensitivity  # Medium weight for torso
+                    weight = self.torso_sensitivity * 1.3  # Increased weight for torso
                 elif idx in arm_indices:
-                    weight = self.arm_sensitivity  # Lower weight for arms
+                    weight = self.arm_sensitivity * 1.2  # Increased weight for arms
                 else:
-                    weight = 1.0
+                    weight = 1.2
                 
                 # Give extra importance to all key joints for straight leg raises
                 if idx in key_straight_leg_joints:
-                    weight *= 1.1  # 10% boost for all joints specifically mentioned by user
+                    weight *= 1.35  # 35% boost for all key joints
                 
                 total_distance += weight * dist
                 total_weight += weight
                 
                 # Track misalignments for feedback (using appropriate threshold)
                 # More specific feedback for straight leg raises
-                if dist_2d > 0.15:  # More forgiving threshold
+                if dist_2d > 0.06:  # Slightly more forgiving threshold
                     # Map joint indices to human-readable names
                     joint_names = {
                         11: "Left Shoulder", 12: "Right Shoulder",
@@ -351,15 +354,14 @@ class PhysioARApp:
         avg_distance = total_distance / total_weight
         
         # Convert to a similarity percentage (inversely related to distance)
-        # Using a more responsive scale factor for better feedback with user-provided coordinates
-        similarity = max(0, min(100, 100 * (1 - avg_distance * 2.2)))  # Slightly more forgiving scale
+        # Using a stricter scale factor for more challenge
+        similarity = max(0, min(100, 100 * (1 - avg_distance * 2.3)))  # More forgiving scale
         
-        # Add a baseline minimum score so the bar always shows something
-        similarity = max(similarity, 0)  # Minimum score of 40%
+        # No baseline minimum score - make users work from 0%
+        similarity = max(similarity, 0)
         
-        # If pose is detected, boost score by 5% to make it easier to get high scores
-        similarity += 5
-        similarity = min(similarity, 100)  # Cap at 100%
+        # Cap at 100% without any boost
+        similarity = min(similarity, 100)
         
         # Print debug info
         print(f"3D Alignment score: {similarity:.2f}%, Avg distance: {avg_distance:.4f}, Misaligned joints: {len(misaligned_joints)}")
