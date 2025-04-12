@@ -15,47 +15,48 @@ EXERCISE_LIBRARY = {
     "Straight Leg Raises": {
         "description": (
             "Perform straight leg raises by standing sideways to the camera. "
-            "Keep your leg completely straight and controlled while lifting it upward, "
-            "engaging the hip flexors and quadriceps. Follow the step-by-step guide to "
-            "ensure your alignment is correct."
+            "Keep your leg comfortable and as straight as possible while lifting it upward. "
+            "This modified version is designed for post-surgery rehabilitation, "
+            "allowing for gentle movement and gradual improvement."
         ),
         "reference_pose": {
             # Upper Body Landmarks (for overall posture & arm positioning)
-            11: [0.70, 0.25, 0],    # Left shoulder: slight downward angle indicates relaxed shoulders.
-            12: [0.65, 0.25, 0],    # Right shoulder: maintains symmetry with left.
-            13: [0.70, 0.35, 0],    # Left elbow: moderately bent, comfortably relaxed.
-            14: [0.65, 0.35, 0],    # Right elbow: mirrors left elbow position.
-            15: [0.70, 0.45, 0],    # Left wrist: positioned for natural arm resting.
-            16: [0.65, 0.45, 0],    # Right wrist: in line with left wrist.
+            11: [0.70, 0.38, 0],    # Left shoulder: positioned slightly to the right with moderate vertical location
+            12: [0.65, 0.38, 0],    # Right shoulder: mirroring the left shoulder to maintain symmetry
+            13: [0.80, 0.50, 0],    # Left elbow: a bit lower than the shoulder, showing a natural bend
+            14: [0.60, 0.50, 0],    # Right elbow: mirrors the left elbow position
+            15: [0.85, 0.62, 0],    # Left wrist: indicates the arm is relaxed by the side
+            16: [0.55, 0.62, 0],    # Right wrist: mirrors left wrist position
             
             # Lower Body Landmarks (key for leg raise)
-            23: [0.70, 0.60, 0],    # Left hip: central position where the raised leg pivots.
-            24: [0.65, 0.60, 0],    # Right hip: remains planted on the ground.
-            25: [0.70, 0.45, 0],    # Left knee: shows the position when the leg is extended and raised.
-            26: [0.65, 0.75, 0],    # Right knee: remains relaxed and stationary.
-            27: [0.70, 0.35, 0],    # Left ankle: elevated higher to indicate the raised leg.
-            28: [0.65, 0.90, 0]     # Right ankle: stays in the original, grounded position.
+            23: [0.70, 0.62, 0],    # Left hip: acts as the pivot for the raised leg
+            24: [0.65, 0.62, 0],    # Right hip: remains stationary on the ground
+            25: [0.70, 0.45, 0],    # Left knee: raised leg, positioned higher relative to the hip
+            26: [0.65, 0.75, 0],    # Right knee: remains in a slightly lower position (stationary leg)
+            27: [0.70, 0.35, 0],    # Left ankle: even higher vertically, showing leg is fully extended and raised
+            28: [0.65, 0.90, 0]     # Right ankle: remains near the ground, indicating the leg is stationary
         },
         "target_joints": [11, 12, 13, 14, 15, 16, 23, 24, 25, 26, 27, 28],
         "variations": ["left_leg_raised", "right_leg_raised"],
         "key_alignment_points": [23, 24, 25, 26, 27, 28],  # Focus primarily on leg positioning
         "steps": [
-            "Stand sideways to the camera with your back straight",
-            "Keep your arms comfortably at your sides for balance",
-            "Raise one leg straight out in front of you",
-            "Keep your leg fully extended without bending the knee",
-            "Hold the raised position for 3 seconds",
-            "Repeat 3 times to complete the exercise"
+            "Stand sideways to the camera with a comfortable posture",
+            "Keep your arms relaxed for balance and support",
+            "Slowly raise one leg in front of you",
+            "Raise to a comfortable height - no need to force it",
+            "Try to keep the leg extended, but slight bending is okay",
+            "Hold the raised position for 2 seconds",
+            "Repeat 3 times, resting between repetitions"
         ],
         "common_errors": [
-            "Bending the knee of the raised leg",
-            "Leaning back when raising the leg",
-            "Not raising the leg high enough",
-            "Moving too quickly without control"
+            "Raising the leg too high causing strain",
+            "Leaning back excessively when raising the leg",
+            "Moving too quickly without control",
+            "Not resting between repetitions"
         ],
-        "difficulty": "Beginner",
+        "difficulty": "Beginner/Rehabilitation",
         "muscle_groups": ["Hip flexors", "Quadriceps", "Core stabilizers"],
-        "min_hold_time": 3.0,  # Seconds to hold the correct pose
+        "min_hold_time": 2.0,  # Seconds to hold the correct pose (reduced from 3.0)
         "reps_required": 3     # Number of successful holds required
     }
 }
