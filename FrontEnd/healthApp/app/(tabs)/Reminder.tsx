@@ -7,61 +7,106 @@ import {
   SafeAreaView,
   ScrollView,
   StatusBar,
-  FlatList,
   Modal,
   TextInput,
   Platform,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Appearance,
+  useColorScheme
 } from 'react-native';
 import { Svg, Path } from 'react-native-svg';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
 
+// Type definitions
+type Reminder = {
+  id: number;
+  title: string;
+  description?: string;
+  time: string;
+  date: string;
+  dateObj: Date;
+  checked: boolean;
+};
+
+type IconProps = {
+  width: number;
+  height: number;
+  color: string;
+};
+
+type AddTaskScreenProps = {
+  visible: boolean;
+  onClose: () => void;
+  onAddTask: (task: Reminder) => void;
+  darkMode: boolean;
+};
+
+type ReminderItemProps = {
+  item: Reminder;
+  onToggleComplete: (id: number) => void;
+  darkMode: boolean;
+};
+
 // Icon Components
-const BellIcon = ({ width, height, color }) => (
+const BellIcon: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216Z" />
   </Svg>
 );
 
-const CalendarIcon = ({ width, height, color }) => (
+const CalendarIcon: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M208,32H184V24a8,8,0,0,0-16,0v8H88V24a8,8,0,0,0-16,0v8H48A16,16,0,0,0,32,48V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V48A16,16,0,0,0,208,32ZM72,48v8a8,8,0,0,0,16,0V48h80v8a8,8,0,0,0,16,0V48h24V80H48V48ZM208,208H48V96H208V208Z" />
   </Svg>
 );
 
-const CaretLeft = ({ width, height, color }) => (
+const CaretLeft: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z" />
   </Svg>
 );
 
-const CaretRight = ({ width, height, color }) => (
+const CaretRight: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M181.66,133.66l-80,80a8,8,0,0,1-11.32-11.32L164.69,128,90.34,53.66a8,8,0,0,1,11.32-11.32l80,80A8,8,0,0,1,181.66,133.66Z" />
   </Svg>
 );
 
-const ClockIcon = ({ width, height, color }) => (
+const ClockIcon: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z" />
   </Svg>
 );
 
-const PlusIcon = ({ width, height, color }) => (
+const PlusIcon: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z" />
   </Svg>
 );
 
-const CheckIcon = ({ width, height, color }) => (
+const CheckIcon: React.FC<IconProps> = ({ width, height, color }) => (
   <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
     <Path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z" />
   </Svg>
 );
 
+const SunIcon: React.FC<IconProps> = ({ width, height, color }) => (
+  <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
+    <Path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z" />
+  </Svg>
+);
+
+const MoonIcon: React.FC<IconProps> = ({ width, height, color }) => (
+  <Svg width={width} height={height} fill={color} viewBox="0 0 256 256">
+    <Path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z" />
+  </Svg>
+);
+
 // Reminder Item Component
-const ReminderItem = ({ item, onToggleComplete }) => {
+const ReminderItem: React.FC<ReminderItemProps> = ({ item, onToggleComplete, darkMode }) => {
+  const styles = getStyles(darkMode);
+  
   return (
     <View style={[styles.reminderItem, item.checked && styles.completedItem]}>
       <View style={styles.reminderLeftContent}>
@@ -86,13 +131,15 @@ const ReminderItem = ({ item, onToggleComplete }) => {
 };
 
 // Add Task Modal Component
-const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
+const AddTaskScreen: React.FC<AddTaskScreenProps> = ({ visible, onClose, onAddTask, darkMode }) => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [date, setDate] = useState(new Date());
   const [time, setTime] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+
+  const styles = getStyles(darkMode);
 
   const resetForm = () => {
     setTitle('');
@@ -153,7 +200,7 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
     dateTimeObj.setMinutes(time.getMinutes());
 
     // Create new reminder
-    const newReminder = {
+    const newReminder: Reminder = {
       id: Date.now(), // Simple unique ID
       title,
       description,
@@ -167,13 +214,13 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
     handleClose();
   };
 
-  const handleDateChange = (event, selectedDate) => {
+  const handleDateChange = (event: any, selectedDate?: Date) => {
     const currentDate = selectedDate || date;
     setShowDatePicker(Platform.OS === 'ios');
     setDate(currentDate);
   };
 
-  const handleTimeChange = (event, selectedTime) => {
+  const handleTimeChange = (event: any, selectedTime?: Date) => {
     const currentTime = selectedTime || time;
     setShowTimePicker(Platform.OS === 'ios');
     setTime(currentTime);
@@ -206,7 +253,7 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
                 value={title}
                 onChangeText={setTitle}
                 placeholder="Enter reminder title"
-                placeholderTextColor="#9E9E9E"
+                placeholderTextColor={darkMode ? '#777' : '#9E9E9E'}
               />
 
               <Text style={styles.inputLabel}>Description (Optional)</Text>
@@ -215,7 +262,7 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
                 value={description}
                 onChangeText={setDescription}
                 placeholder="Add details about your reminder"
-                placeholderTextColor="#9E9E9E"
+                placeholderTextColor={darkMode ? '#777' : '#9E9E9E'}
                 multiline
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -226,7 +273,7 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
                 style={styles.pickerButton}
                 onPress={() => setShowDatePicker(true)}
               >
-                <CalendarIcon width={20} height={20} color="#000" />
+                <CalendarIcon width={20} height={20} color={darkMode ? '#fff' : '#000'} />
                 <Text style={styles.pickerButtonText}>
                   {date.toLocaleDateString('en-US', {
                     weekday: 'short',
@@ -242,7 +289,7 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
                 style={styles.pickerButton}
                 onPress={() => setShowTimePicker(true)}
               >
-                <ClockIcon width={20} height={20} color="#000" />
+                <ClockIcon width={20} height={20} color={darkMode ? '#fff' : '#000'} />
                 <Text style={styles.pickerButtonText}>
                   {time.toLocaleTimeString('en-US', {
                     hour: 'numeric',
@@ -283,17 +330,23 @@ const AddTaskScreen = ({ visible, onClose, onAddTask }) => {
 };
 
 // Main Reminders Component
-const RemindersScreen = () => {
-  const [reminders, setReminders] = useState([]);
+const RemindersScreen: React.FC = () => {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(true);
   const [dateDetailModalVisible, setDateDetailModalVisible] = useState(false);
+  const [darkMode, setDarkMode] = useState(Appearance.getColorScheme() === 'dark');
   const router = useRouter();
   
   // Get current month and year
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
   // Sample data for initial state
   useEffect(() => {
@@ -301,7 +354,7 @@ const RemindersScreen = () => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    const initialReminders = [
+    const initialReminders: Reminder[] = [
       {
         id: 1,
         title: 'Take medication',
@@ -334,11 +387,11 @@ const RemindersScreen = () => {
     setReminders(initialReminders);
   }, []);
 
-  const handleAddTask = (newTask) => {
+  const handleAddTask = (newTask: Reminder) => {
     setReminders([...reminders, newTask]);
   };
 
-  const handleToggleComplete = (id) => {
+  const handleToggleComplete = (id: number) => {
     setReminders(
       reminders.map(reminder =>
         reminder.id === id
@@ -349,12 +402,12 @@ const RemindersScreen = () => {
   };
 
   // Helper function to get days in month
-  const getDaysInMonth = (month, year) => {
+  const getDaysInMonth = (month: number, year: number) => {
     return new Date(year, month + 1, 0).getDate();
   };
 
   // Helper function to get the first day of the month (0 = Sunday, 1 = Monday, etc.)
-  const getFirstDayOfMonth = (month, year) => {
+  const getFirstDayOfMonth = (month: number, year: number) => {
     return new Date(year, month, 1).getDay();
   };
 
@@ -379,12 +432,12 @@ const RemindersScreen = () => {
   };
 
   // Format date to string for comparison
-  const formatDateToString = (date) => {
+  const formatDateToString = (date: Date) => {
     return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
   };
 
   // Check if a date has reminders
-  const hasRemindersOnDate = (date) => {
+  const hasRemindersOnDate = (date: Date) => {
     return reminders.some(reminder => {
       const reminderDate = reminder.dateObj;
       return (
@@ -396,7 +449,7 @@ const RemindersScreen = () => {
   };
 
   // Get reminders for a specific date
-  const getRemindersForDate = (date) => {
+  const getRemindersForDate = (date: Date) => {
     return reminders.filter(reminder => {
       const reminderDate = reminder.dateObj;
       return (
@@ -412,7 +465,7 @@ const RemindersScreen = () => {
   };
 
   // Handle date selection
-  const handleDateSelect = (date) => {
+  const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setDateDetailModalVisible(true);
   };
@@ -422,6 +475,7 @@ const RemindersScreen = () => {
     const days = [];
     const daysInMonth = getDaysInMonth(currentMonth, currentYear);
     const firstDayOfMonth = getFirstDayOfMonth(currentMonth, currentYear);
+    const styles = getStyles(darkMode);
     
     // Empty cells before the 1st
     for (let i = 0; i < firstDayOfMonth; i++) {
@@ -466,7 +520,7 @@ const RemindersScreen = () => {
   };
 
   // Group reminders by date
-  const groupedReminders = reminders.reduce((groups, reminder) => {
+  const groupedReminders = reminders.reduce((groups: Record<string, Reminder[]>, reminder) => {
     const date = reminder.date;
     if (!groups[date]) {
       groups[date] = [];
@@ -485,30 +539,41 @@ const RemindersScreen = () => {
     })
   }));
 
+  const styles = getStyles(darkMode);
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle={darkMode ? 'light-content' : 'dark-content'} />
 
       {/* Header */}
       <View style={styles.header}>
         <View style={styles.headerIconContainer}>
           {showCalendar ? (
-            <BellIcon width={24} height={24} color="#000" />
+            <BellIcon width={24} height={24} color={darkMode ? '#fff' : '#000'} />
           ) : (
             <TouchableOpacity onPress={() => setShowCalendar(true)}>
-              <CalendarIcon width={24} height={24} color="#000" />
+              <CalendarIcon width={24} height={24} color={darkMode ? '#fff' : '#000'} />
             </TouchableOpacity>
           )}
         </View>
         <Text style={styles.headerTitle}>Reminders</Text>
-        <TouchableOpacity 
-          style={styles.headerRight}
-          onPress={() => setShowCalendar(!showCalendar)}
-        >
-          <Text style={styles.headerRightText}>
-            {showCalendar ? "List" : "Calendar"}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.headerRightContainer}>
+          <TouchableOpacity onPress={toggleDarkMode} style={styles.darkModeButton}>
+            {darkMode ? (
+              <SunIcon width={24} height={24} color="#FFD700" />
+            ) : (
+              <MoonIcon width={24} height={24} color="#000" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.listCalendarButton}
+            onPress={() => setShowCalendar(!showCalendar)}
+          >
+            <Text style={styles.headerRightText}>
+              {showCalendar ? "List" : "Calendar"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Add Reminder Button */}
@@ -525,13 +590,13 @@ const RemindersScreen = () => {
           <View style={styles.calendarContainer}>
             <View style={styles.calendarHeaderRow}>
               <TouchableOpacity onPress={goToPreviousMonth}>
-                <CaretLeft width={18} height={18} color="#000" />
+                <CaretLeft width={18} height={18} color={darkMode ? '#fff' : '#000'} />
               </TouchableOpacity>
               <Text style={styles.monthTitle}>
                 {new Date(currentYear, currentMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </Text>
               <TouchableOpacity onPress={goToNextMonth}>
-                <CaretRight width={18} height={18} color="#000" />
+                <CaretRight width={18} height={18} color={darkMode ? '#fff' : '#000'} />
               </TouchableOpacity>
             </View>
             
@@ -556,6 +621,7 @@ const RemindersScreen = () => {
                     key={item.id}
                     item={item}
                     onToggleComplete={handleToggleComplete}
+                    darkMode={darkMode}
                   />
                 ))
               ) : (
@@ -575,6 +641,7 @@ const RemindersScreen = () => {
                       key={item.id}
                       item={item}
                       onToggleComplete={handleToggleComplete}
+                      darkMode={darkMode}
                     />
                   ))}
                 </View>
@@ -607,6 +674,7 @@ const RemindersScreen = () => {
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
         onAddTask={handleAddTask}
+        darkMode={darkMode}
       />
 
       {/* Date Detail Modal */}
@@ -637,6 +705,7 @@ const RemindersScreen = () => {
                     key={item.id}
                     item={item}
                     onToggleComplete={handleToggleComplete}
+                    darkMode={darkMode}
                   />
                 ))
               ) : (
@@ -661,10 +730,11 @@ const RemindersScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
+// Styles with dark mode support
+const getStyles = (darkMode: boolean) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: darkMode ? '#121212' : '#FFFFFF',
   },
   header: {
     flexDirection: 'row',
@@ -673,7 +743,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: darkMode ? '#333' : '#EEEEEE',
   },
   headerIconContainer: {
     width: 48,
@@ -686,20 +756,29 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     flex: 1,
     textAlign: 'center',
+    color: darkMode ? '#fff' : '#000',
   },
-  headerRight: {
-    width: 80,
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+  headerRightContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: 120,
+    justifyContent: 'flex-end',
+  },
+  darkModeButton: {
+    padding: 8,
+    marginRight: 8,
+  },
+  listCalendarButton: {
+    padding: 8,
   },
   headerRightText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: darkMode ? '#fff' : '#000',
   },
   // Add Reminder Button styles
   addReminderButton: {
-    backgroundColor: '#000',
+    backgroundColor: darkMode ? '#BB86FC' : '#000',
     padding: 12,
     marginHorizontal: 16,
     borderRadius: 8,
@@ -722,6 +801,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    color: darkMode ? '#fff' : '#000',
   },
   reminderItem: {
     flexDirection: 'row',
@@ -731,7 +811,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F5F5F5',
+    borderBottomColor: darkMode ? '#333' : '#F5F5F5',
   },
   completedItem: {
     opacity: 0.7,
@@ -746,14 +826,14 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#000',
+    borderColor: darkMode ? '#BB86FC' : '#000',
     marginRight: 16,
     justifyContent: 'center',
     alignItems: 'center',
   },
   checkedContainer: {
-    backgroundColor: '#000',
-    borderColor: '#000',
+    backgroundColor: darkMode ? '#BB86FC' : '#000',
+    borderColor: darkMode ? '#BB86FC' : '#000',
   },
   reminderTextContainer: {
     flex: 1,
@@ -762,15 +842,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: darkMode ? '#fff' : '#000',
   },
   reminderTime: {
     fontSize: 14,
-    color: '#6B6B6B',
+    color: darkMode ? '#aaa' : '#6B6B6B',
     marginBottom: 4,
   },
   reminderDescription: {
     fontSize: 14,
-    color: '#6B6B6B',
+    color: darkMode ? '#aaa' : '#6B6B6B',
   },
   completedText: {
     textDecorationLine: 'line-through',
@@ -785,10 +866,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 8,
+    color: darkMode ? '#fff' : '#000',
   },
   emptySubtext: {
     fontSize: 16,
-    color: '#6B6B6B',
+    color: darkMode ? '#aaa' : '#6B6B6B',
   },
   fabContainer: {
     position: 'absolute',
@@ -798,7 +880,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   fab: {
-    backgroundColor: '#000',
+    backgroundColor: darkMode ? '#BB86FC' : '#000',
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -833,6 +915,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     flex: 1,
+    color: darkMode ? '#fff' : '#000',
   },
   weekdayRow: {
     flexDirection: 'row',
@@ -844,7 +927,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 14,
     fontWeight: '700',
-    color: '#6B6B6B',
+    color: darkMode ? '#aaa' : '#6B6B6B',
   },
   daysGrid: {
     flexDirection: 'row',
@@ -867,15 +950,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   selectedDayButton: {
-    backgroundColor: '#000',
+    backgroundColor: darkMode ? '#BB86FC' : '#000',
   },
   todayButton: {
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: darkMode ? '#BB86FC' : '#000',
   },
   dayText: {
     fontSize: 14,
     fontWeight: '500',
+    color: darkMode ? '#fff' : '#000',
   },
   todayText: {
     fontWeight: '700',
@@ -896,17 +980,18 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#EEEEEE',
+    borderTopColor: darkMode ? '#333' : '#EEEEEE',
     paddingTop: 16,
   },
   todayRemindersTitle: {
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 16,
+    color: darkMode ? '#fff' : '#000',
   },
   noRemindersText: {
     fontSize: 16,
-    color: '#6B6B6B',
+    color: darkMode ? '#aaa' : '#6B6B6B',
     textAlign: 'center',
     paddingVertical: 24,
   },
@@ -918,7 +1003,7 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   dateDetailModal: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: darkMode ? '#1E1E1E' : '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     minHeight: '60%',
@@ -931,11 +1016,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: darkMode ? '#333' : '#EEEEEE',
   },
   dateDetailTitle: {
     fontSize: 18,
     fontWeight: '700',
+    color: darkMode ? '#fff' : '#000',
   },
   closeButton: {
     padding: 8,
@@ -954,24 +1040,13 @@ const styles = StyleSheet.create({
   },
   emptyDateText: {
     fontSize: 16,
-    color: '#6B6B6B',
+    color: darkMode ? '#aaa' : '#6B6B6B',
     marginBottom: 16,
-  },
-  addReminderButton: {
-    backgroundColor: '#000',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  addReminderButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
 
   // Add Task Modal styles
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: darkMode ? '#1E1E1E' : 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     padding: 16,
@@ -984,11 +1059,12 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#EEEEEE',
+    borderBottomColor: darkMode ? '#333' : '#EEEEEE',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
+    color: darkMode ? '#fff' : '#000',
   },
   cancelButton: {
     fontSize: 16,
@@ -1004,14 +1080,16 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginTop: 16,
     marginBottom: 8,
+    color: darkMode ? '#fff' : '#000',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: darkMode ? '#333' : '#DDDDDD',
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: darkMode ? '#2D2D2D' : '#F9F9F9',
+    color: darkMode ? '#fff' : '#000',
   },
   textArea: {
     height: 100,
@@ -1020,17 +1098,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#DDDDDD',
+    borderColor: darkMode ? '#333' : '#DDDDDD',
     borderRadius: 8,
     padding: 12,
-    backgroundColor: '#F9F9F9',
+    backgroundColor: darkMode ? '#2D2D2D' : '#F9F9F9',
   },
   pickerButtonText: {
     fontSize: 16,
     marginLeft: 8,
+    color: darkMode ? '#fff' : '#000',
   },
   saveButton: {
-    backgroundColor: 'black',
+    backgroundColor: darkMode ? '#BB86FC' : 'black',
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',
