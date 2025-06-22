@@ -1,50 +1,116 @@
-# Welcome to your Expo app 👋
+Here is your updated `README.md` with all features included and the author credited at the bottom:
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+---
 
-## Get started
+````markdown
+# 🩺 React Native Health App (Expo)
 
-1. Install dependencies
+Welcome to the **React Native Health App**, built using **Expo Router** and **React Native**. This application provides a sleek, customizable bottom tab navigation interface with features tailored for health tracking, exercise, reminders, emergency access, and useful utilities.
 
-   ```bash
-   npm install
-   ```
+---
 
-2. Start the app
+## 🚀 Getting Started
 
-   ```bash
-    npx expo start
-   ```
+### 📦 Install Dependencies
 
-In the output, you'll find options to open the app in a
+Install all the required project dependencies:
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+```bash
+npm install
+````
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### ▶️ Start the App
 
-## Get a fresh project
+To start the development server and run the app:
 
-When you're ready, run:
+```bash
+npx expo start
+```
+
+From here, you can open the app using:
+
+* **Expo Go App** (via QR Code)
+* **Android Emulator**
+* **iOS Simulator**
+* **Development Build** (for native features)
+
+---
+
+## 📁 Project Structure
+
+```
+.
+├── app/                   # Screens (index.tsx, Exercise.tsx, etc.)
+├── constants/             # Constants and icon resources (e.g., icons.ts)
+├── layout.tsx             # Custom Tab Bar Layout
+├── README.md              # Project documentation
+```
+
+---
+
+## 🧭 Navigation Tabs
+
+This app uses **Expo Router** and file-based routing with a highly customized bottom tab bar. Each route corresponds to a feature screen:
+
+| 🧭 Tab       | 🛣️ Route    | 🔍 Description                          |
+| ------------ | ------------ | --------------------------------------- |
+| 🏠 Home      | `/index`     | Welcome and overview screen             |
+| 💪 Exercise  | `/Exercise`  | Track workouts, exercises, and activity |
+| ⏰ Reminder   | `/Reminder`  | Set health-related reminders (badge UI) |
+| 🧰 Utilities | `/Utilities` | Useful tools like BMI calculator, etc.  |
+| 🚨 Emergency | `/Emergency` | Access help or emergency resources      |
+
+---
+
+## ✨ Custom Tab Bar Highlights
+
+* 🖼️ **Dynamic Icons** – Highlighted on focus
+* 🔴 **Badge Support** – Shown on Reminder tab
+* 🌌 **Dark Theme** – Consistent dark UI with shadows
+* 📱 **Safe Area Compatible** – Supports iOS notch/padding
+* 🛠️ **Configurable per tab** – With `unmountOnBlur` and `lazy` options
+
+---
+
+## 🧼 Reset Project
+
+To remove the starter content and begin with a fresh blank app:
 
 ```bash
 npm run reset-project
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This command will:
 
-## Learn more
+* Move the starter files to `app-example`
+* Create a fresh empty directory in `app/`
 
-To learn more about developing your project with Expo, look at the following resources:
+---
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📚 Useful Resources
 
-## Join the community
+* [📘 Expo Documentation](https://docs.expo.dev/)
+* [🚀 Expo Router Guide](https://expo.github.io/router/docs)
+* [📱 Learn React Native](https://reactnative.dev/docs/getting-started)
+* [💬 Join Expo on Discord](https://discord.gg/expo)
+* [🌐 Expo GitHub](https://github.com/expo/expo)
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## 🛠️ Dev Scripts
+
+| Script                  | Description                        |
+| ----------------------- | ---------------------------------- |
+| `npm install`           | Install dependencies               |
+| `npx expo start`        | Launch development server          |
+| `npm run reset-project` | Wipe starter files and start fresh |
+
+---
+
+## 👨‍💻 Author
+
+**Nithish Reddy**
+B.E. Information Science
+Ramaiah Institute of Technology
+
+---
